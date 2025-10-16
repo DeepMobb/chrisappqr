@@ -1,0 +1,700 @@
+<!doctype html>
+<html lang="da">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>QR Liste - ROCKGPT</title>
+  <!-- html5-qrcode library -->
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/minified/html5-qrcode.min.js"></script>
+  <style>
+    :root{
+      --bg:#f5f5f6; /* light grey */
+      --accent:#d32f2f; /* red */
+      --muted:#9b9b9b;
+      --black:#111;
+      --white:#fff;
+      --card-radius:12px;
+      --shadow: 0 6px 18px rgba(0,0,0,0.08);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      background:var(--bg);
+      color:var(--black);
+      -webkit-font-smoothing:antialiased;
+      -moz-osx-font-smoothing:grayscale;
+      min-height:100vh;
+      display:flex;
+      align-items:stretch;
+      justify-content:center;
+      padding:24px;
+    }
+    .app{
+      width:100%;
+      max-width:720px;
+      background:linear-gradient(180deg, rgba(255,255,255,0.98), rgba(255,255,255,0.96));
+      border-radius:16px;
+      padding:20px;
+      box-shadow:var(--shadow);
+      display:flex;
+      flex-direction:column;
+      gap:16px;
+    }
+    header{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+    }
+    .brand{
+      display:flex;
+      gap:12px;
+      align-items:center;
+    }
+    .logo{
+      width:48px;
+      height:48px;
+      border-radius:10px;
+      background:var(--accent);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      color:var(--white);
+      font-weight:700;
+      font-size:18px;
+      box-shadow: 0 6px 12px rgba(211,47,47,0.18);
+    }
+    h1{margin:0;font-size:18px}
+    p.lead{margin:0;color:var(--muted);font-size:13px}
+
+    /* Main screen */
+    .main-screen, .initiate-view { display:none; }
+    .visible { display:block; animation:fadeIn 220ms ease; }
+    @keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+    .card{
+      background:var(--white);
+      padding:16px;
+      border-radius:var(--card-radius);
+      box-shadow:var(--shadow);
+    }
+    .center{
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      gap:12px;
+    }
+    .btn{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      gap:8px;
+      padding:12px 18px;
+      border-radius:10px;
+      border:0;
+      font-weight:600;
+      cursor:pointer;
+      transition:transform 120ms ease, box-shadow 120ms ease;
+    }
+    .btn:active{transform:translateY(2px)}
+    .btn-primary{
+      background:var(--accent);
+      color:var(--white);
+      box-shadow: 0 8px 22px rgba(211,47,47,0.14);
+    }
+    .btn-ghost{
+      background:transparent;
+      border:1px solid rgba(0,0,0,0.06);
+      color:var(--black);
+    }
+    .small{
+      padding:8px 12px;
+      font-size:14px;
+      border-radius:8px;
+    }
+
+    /* Saved reports list */
+    .reports { display:flex; flex-direction:column; gap:10px; margin-top:8px; }
+    .report{
+      display:flex; align-items:center; justify-content:space-between;
+      padding:10px; border-radius:10px; background:linear-gradient(180deg,#fff,#fafafa);
+      border:1px solid rgba(0,0,0,0.03);
+    }
+    .meta{display:flex;flex-direction:column}
+    .meta .title{font-weight:600}
+    .meta .sub{font-size:13px;color:var(--muted)}
+
+    /* initiate view list */
+    .qr-list { min-height:140px; display:flex; flex-direction:column; gap:8px; margin-bottom:8px; }
+    .qr-item{
+      display:flex; gap:10px; align-items:center; justify-content:space-between;
+      padding:10px; border-radius:10px; background:#fff; border:1px solid rgba(0,0,0,0.04);
+    }
+    .qr-item code{font-size:13px; color:#222; word-break:break-all; max-width:64%}
+    .qr-empty{color:var(--muted); padding:20px; text-align:center}
+
+    /* bottom action bar */
+    .action-bar{
+      display:flex;
+      gap:12px;
+      align-items:center;
+      justify-content:space-between;
+    }
+    .fab{
+      height:56px;width:56px;border-radius:14px;background:var(--black);color:var(--white);display:inline-flex;align-items:center;justify-content:center;font-size:22px;
+      box-shadow:0 10px 22px rgba(0,0,0,0.12); cursor:pointer; border:0;
+    }
+    .save-btn{
+      flex:1;
+      margin-left:8px;
+      background:linear-gradient(90deg,var(--accent),#c62828);
+      color:var(--white);
+      border-radius:12px;
+      padding:14px;
+      border:0;
+      font-weight:700;
+      cursor:pointer;
+    }
+
+    /* scanner overlay */
+    .overlay{
+      position:fixed;
+      inset:0;
+      display:none;
+      align-items:center;
+      justify-content:center;
+      background:rgba(0,0,0,0.45);
+      z-index:999;
+      padding:20px;
+    }
+    .overlay.visible{display:flex}
+    .scanner-card{
+      width:100%;
+      max-width:640px;
+      background:var(--white);
+      border-radius:14px;
+      overflow:hidden;
+      box-shadow:0 20px 40px rgba(0,0,0,0.28);
+    }
+    .scanner-header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid rgba(0,0,0,0.04)}
+    .scanner-body{padding:12px;background:#111; display:flex;flex-direction:column; gap:8px}
+    #qr-reader{width:100%;min-height:320px;border-radius:8px;overflow:hidden;background:#000}
+    .scanner-footer{display:flex;gap:8px;padding:12px;align-items:center;justify-content:space-between}
+
+    /* modal confirmation */
+    .confirm-modal{
+      position:fixed;
+      left:50%; top:50%;
+      transform:translate(-50%,-50%);
+      z-index:1200;
+      background:var(--white);
+      padding:18px;
+      border-radius:12px;
+      box-shadow:0 30px 60px rgba(0,0,0,0.3);
+      width:calc(100% - 48px);
+      max-width:540px;
+      display:none;
+    }
+    .confirm-modal.visible{display:block}
+    .confirm-text{font-weight:600;margin-bottom:10px}
+    .confirm-data{font-family:monospace;background:#f3f3f3;padding:10px;border-radius:8px;max-height:160px;overflow:auto;white-space:pre-wrap}
+    .confirm-actions{display:flex;gap:8px;margin-top:12px;justify-content:flex-end}
+    .btn-danger{background:#fff;border:1px solid rgba(0,0,0,0.06);color:var(--black)}
+
+    /* small helpers */
+    .muted{color:var(--muted); font-size:13px}
+    .count-badge{background:var(--accent);color:#fff;padding:6px 10px;border-radius:999px;font-weight:700}
+
+    @media (max-width:520px){
+      .app{padding:14px}
+      .logo{width:40px;height:40px}
+      .scanner-body{padding:8px}
+    }
+  </style>
+</head>
+<body>
+  <div class="app" role="application" aria-label="QR Liste app">
+    <header>
+      <div class="brand">
+        <div class="logo">QR</div>
+        <div>
+          <h1>QR Liste</h1>
+          <p class="lead">Hold styr på dine scannede data — hurtig og enkel</p>
+        </div>
+      </div>
+      <div class="center">
+        <div class="muted">ROCKGPT</div>
+      </div>
+    </header>
+
+    <!-- MAIN SCREEN -->
+    <section id="mainScreen" class="main-screen visible">
+      <div class="card">
+        <div style="display:flex;align-items:center;justify-content:space-between;">
+          <div>
+            <strong>Velkommen</strong>
+            <div class="muted" style="margin-top:6px">Tryk "Ny liste" for at starte en scanning</div>
+          </div>
+          <div>
+            <button id="btnNewList" class="btn btn-primary">Ny liste</button>
+          </div>
+        </div>
+      </div>
+
+      <div style="margin-top:12px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+          <strong>Gemte rapporter</strong>
+          <small class="muted" id="reportsCount"></small>
+        </div>
+        <div id="reports" class="reports"></div>
+      </div>
+    </section>
+
+    <!-- INITIATE VIEW -->
+    <section id="initiateView" class="initiate-view card">
+      <div style="display:flex;align-items:center;justify-content:space-between;">
+        <div>
+          <strong>Aktuel liste</strong>
+          <div class="muted">Scan QR-koder og saml data. Klik Gem for at gemme rapporten.</div>
+        </div>
+        <div class="count-badge" id="itemCount">0</div>
+      </div>
+
+      <div style="margin-top:12px;">
+        <div class="qr-list card" id="qrListContainer" style="min-height:140px;padding:12px;">
+          <div class="qr-empty" id="qrEmpty">Ingen emner endnu — brug kameraet for at scanne.</div>
+        </div>
+      </div>
+
+      <div class="action-bar" style="margin-top:8px;">
+        <button id="btnCamera" class="fab" title="Åbn kamera" aria-label="Åbn kamera">
+          <!-- camera icon -->
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M4 7.5C4 6.12 5.12 5 6.5 5H8.2L9.3 3.5H14.7L15.8 5H17.5C18.88 5 20 6.12 20 7.5V18.5C20 19.88 18.88 21 17.5 21H6.5C5.12 21 4 19.88 4 18.5V7.5Z" fill="#fff" opacity="0.12"/><path d="M12 8.75A4.25 4.25 0 1012 17.25 4.25 4.25 0 0012 8.75zM6.5 5h11c1.38 0 2.5 1.12 2.5 2.5V18.5c0 1.38-1.12 2.5-2.5 2.5h-11C5.12 21 4 19.88 4 18.5V7.5C4 6.12 5.12 5 6.5 5z" fill="#fff"/></svg>
+        </button>
+
+        <button id="btnSaveReport" class="save-btn">Gem rapport</button>
+      </div>
+
+      <div style="display:flex;gap:8px;margin-top:8px;justify-content:flex-end;">
+        <button id="btnCancelList" class="btn btn-ghost small">Fortryd</button>
+      </div>
+    </section>
+  </div>
+
+  <!-- Scanner overlay -->
+  <div id="overlay" class="overlay" aria-hidden="true">
+    <div class="scanner-card" role="dialog" aria-modal="true" aria-label="Scanner">
+      <div class="scanner-header">
+        <div style="font-weight:700;color:var(--black)">Scanner</div>
+        <div class="muted">Sikre god belysning for bedste resultater</div>
+      </div>
+      <div class="scanner-body">
+        <div id="qr-reader"></div>
+        <div class="muted" style="font-size:13px">Tip: hold kameraet stille over QR-koden</div>
+      </div>
+      <div class="scanner-footer">
+        <div style="display:flex;gap:8px">
+          <button id="btnToggleCameras" class="btn btn-ghost small">Skift kamera</button>
+          <button id="btnCloseScanner" class="btn btn-ghost small">Luk scanner</button>
+        </div>
+        <div class="muted" id="scannerStatus">Venter på scanning…</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Confirm modal -->
+  <div id="confirmModal" class="confirm-modal" role="dialog" aria-modal="true" aria-label="Bekræft data">
+    <div class="confirm-text">Er dette den korrekte data fra QR-koden?</div>
+    <div class="confirm-data" id="confirmData">...</div>
+    <div class="confirm-actions">
+      <button id="btnDecline" class="btn btn-danger small">Afvis</button>
+      <button id="btnAccept" class="btn btn-primary small">Godkend</button>
+    </div>
+  </div>
+
+  <script>
+    // App state
+    const state = {
+      currentList: [], // items for this session list
+      reports: [],     // saved reports
+      qrScanner: null,
+      scannerRunning: false,
+      availableDevices: [],
+      activeCameraId: null,
+      lastResult: null
+    };
+
+    // Local storage keys
+    const LS_REPORTS = 'qr_reports_v1';
+
+    // Elements
+    const mainScreen = document.getElementById('mainScreen');
+    const initiateView = document.getElementById('initiateView');
+    const btnNewList = document.getElementById('btnNewList');
+    const btnCamera = document.getElementById('btnCamera');
+    const btnSaveReport = document.getElementById('btnSaveReport');
+    const btnCancelList = document.getElementById('btnCancelList');
+    const reportsContainer = document.getElementById('reports');
+    const reportsCount = document.getElementById('reportsCount');
+
+    const overlay = document.getElementById('overlay');
+    const qrReaderElem = document.getElementById('qr-reader');
+    const scannerStatus = document.getElementById('scannerStatus');
+    const btnCloseScanner = document.getElementById('btnCloseScanner');
+    const btnToggleCameras = document.getElementById('btnToggleCameras');
+
+    const confirmModal = document.getElementById('confirmModal');
+    const confirmData = document.getElementById('confirmData');
+    const btnAccept = document.getElementById('btnAccept');
+    const btnDecline = document.getElementById('btnDecline');
+
+    const qrListContainer = document.getElementById('qrListContainer');
+    const qrEmpty = document.getElementById('qrEmpty');
+    const itemCount = document.getElementById('itemCount');
+
+    // Init
+    function boot(){
+      loadReports();
+      renderReports();
+      attachEventListeners();
+      showMainScreen();
+    }
+
+    // Navigation
+    function showMainScreen(){
+      mainScreen.classList.add('visible');
+      initiateView.classList.remove('visible');
+      updateReportsCount();
+    }
+    function showInitiateView(){
+      mainScreen.classList.remove('visible');
+      initiateView.classList.add('visible');
+      renderCurrentList();
+    }
+
+    // Persistence (localStorage)
+    function saveReportsToStorage(){
+      try{ localStorage.setItem(LS_REPORTS, JSON.stringify(state.reports)); }catch(e){}
+    }
+    function loadReports(){
+      try{
+        const raw = localStorage.getItem(LS_REPORTS);
+        if(raw) state.reports = JSON.parse(raw);
+        else state.reports = [];
+      }catch(e){
+        state.reports = [];
+      }
+    }
+
+    // Reports UI
+    function renderReports(){
+      reportsContainer.innerHTML = '';
+      if(!state.reports.length){
+        reportsContainer.innerHTML = '<div class="muted">Ingen gemte rapporter endnu</div>';
+      } else {
+        state.reports.slice().reverse().forEach((r, i)=>{ // show newest first
+          const el = document.createElement('div');
+          el.className = 'report';
+          el.innerHTML = `
+            <div class="meta">
+              <div class="title">${escapeHtml(r.title)}</div>
+              <div class="sub">${r.items.length} emner • ${new Date(r.created).toLocaleString()}</div>
+            </div>
+            <div style="display:flex;gap:8px;align-items:center">
+              <button class="btn btn-ghost small" data-action="view" data-idx="${i}">Vis</button>
+              <button class="btn btn-ghost small" data-action="delete" data-idx="${i}">Slet</button>
+            </div>
+          `;
+          reportsContainer.appendChild(el);
+        });
+      }
+      updateReportsCount();
+      // attach delegated handlers
+      reportsContainer.querySelectorAll('button').forEach(b=>{
+        b.addEventListener('click', (ev)=>{
+          const idx = parseInt(b.dataset.idx,10);
+          const action = b.dataset.action;
+          handleReportAction(action, idx);
+        });
+      });
+    }
+
+    function updateReportsCount(){
+      reportsCount.textContent = `${state.reports.length} rapport(er)`;
+    }
+
+    function handleReportAction(action, idx){
+      // idx is from reversed list rendering; we stored as original order so convert:
+      const actualIdx = state.reports.length - 1 - idx;
+      if(action === 'delete'){
+        if(confirm('Vil du slette rapporten?')){
+          state.reports.splice(actualIdx,1);
+          saveReportsToStorage();
+          renderReports();
+        }
+      } else if(action === 'view'){
+        const r = state.reports[actualIdx];
+        // Simple viewer: show as alert (keeps UI concise). Could be expanded to modal.
+        let out = `Rapport: ${r.title}\nTid: ${new Date(r.created).toLocaleString()}\nAntal: ${r.items.length}\n\n`;
+        out += r.items.map((it,idx)=>`${idx+1}. ${it}`).join('\n\n');
+        alert(out);
+      }
+    }
+
+    // Current list management
+    function addToCurrentList(data){
+      state.currentList.push(data);
+      renderCurrentList();
+    }
+    function renderCurrentList(){
+      qrListContainer.innerHTML = '';
+      if(!state.currentList.length){
+        qrListContainer.appendChild(qrEmpty);
+        qrEmpty.style.display = 'block';
+      } else {
+        qrEmpty.style.display = 'none';
+        state.currentList.forEach((it,idx)=>{
+          const item = document.createElement('div');
+          item.className = 'qr-item';
+          item.innerHTML = `
+            <div style="display:flex;gap:10px;align-items:center">
+              <div style="width:10px;height:10px;border-radius:6px;background:var(--accent)"></div>
+              <code>${escapeHtml(it)}</code>
+            </div>
+            <div style="display:flex;gap:8px;align-items:center">
+              <button class="btn btn-ghost small" data-idx="${idx}" data-action="edit">Redigér</button>
+              <button class="btn btn-ghost small" data-idx="${idx}" data-action="remove">Slet</button>
+            </div>
+          `;
+          qrListContainer.appendChild(item);
+        });
+        // attach handlers
+        qrListContainer.querySelectorAll('button').forEach(b=>{
+          b.addEventListener('click', (ev)=>{
+            const idx = parseInt(b.dataset.idx,10);
+            const act = b.dataset.action;
+            if(act==='remove'){
+              state.currentList.splice(idx,1);
+              renderCurrentList();
+            } else if(act==='edit'){
+              const newVal = prompt('Redigér data:', state.currentList[idx]);
+              if(newVal!==null) { state.currentList[idx] = newVal.trim(); renderCurrentList(); }
+            }
+          });
+        });
+      }
+      itemCount.textContent = state.currentList.length;
+    }
+
+    // Buttons & events
+    function attachEventListeners(){
+      btnNewList.addEventListener('click', ()=>{
+        state.currentList = [];
+        renderCurrentList();
+        showInitiateView();
+      });
+
+      btnCancelList.addEventListener('click', ()=>{
+        if(state.scannerRunning) stopScanner();
+        if(confirm('Fortryder du oprettelse af listen?')) {
+          state.currentList = [];
+          showMainScreen();
+        }
+      });
+
+      btnCamera.addEventListener('click', ()=>{
+        openScanner();
+      });
+
+      btnSaveReport.addEventListener('click', ()=>{
+        if(!state.currentList.length){
+          alert('Listen er tom — scan mindst én QR-kode før du gemmer.');
+          return;
+        }
+        const t = prompt('Navngiv rapport (eller tryk OK for standardnavn):', `Liste ${new Date().toLocaleString()}`);
+        const title = t ? t.trim() : `Liste ${new Date().toLocaleString()}`;
+        const report = { title, created: Date.now(), items: state.currentList.slice() };
+        state.reports.push(report);
+        saveReportsToStorage();
+        state.currentList = [];
+        renderCurrentList();
+        renderReports();
+        showMainScreen();
+      });
+
+      btnCloseScanner.addEventListener('click', ()=>{
+        closeScannerUI();
+      });
+
+      btnToggleCameras.addEventListener('click', async ()=>{
+        await toggleCamera();
+      });
+
+      // confirm modal
+      btnDecline.addEventListener('click', ()=>{
+        hideConfirmModal();
+        // resume scanning
+        startScanner(); // restart scanner so user can rescan
+      });
+      btnAccept.addEventListener('click', ()=>{
+        if(state.lastResult){
+          addToCurrentList(state.lastResult);
+        }
+        hideConfirmModal();
+        // resume scanning for more
+        startScanner();
+      });
+
+      // overlay close via click outside (optional)
+      overlay.addEventListener('click', (ev)=>{
+        if(ev.target === overlay) closeScannerUI();
+      });
+
+      // prevent accidental form submit on Enter
+      window.addEventListener('keydown', (e)=>{ if(e.key==='Enter'){ /* avoid form submissions */ } });
+    }
+
+    // Scanner UI control
+    function openScanner(){
+      overlay.classList.add('visible');
+      overlay.setAttribute('aria-hidden','false');
+      startScanner();
+    }
+    function closeScannerUI(){
+      overlay.classList.remove('visible');
+      overlay.setAttribute('aria-hidden','true');
+      stopScanner();
+    }
+
+    // Confirmation modal
+    function showConfirmModal(data){
+      confirmData.textContent = data;
+      confirmModal.classList.add('visible');
+      confirmModal.style.display = 'block';
+    }
+    function hideConfirmModal(){
+      confirmModal.classList.remove('visible');
+      confirmModal.style.display = 'none';
+      confirmData.textContent = '';
+      state.lastResult = null;
+    }
+
+    // Scanner operations using html5-qrcode library
+    async function startScanner(){
+      if(state.scannerRunning) return;
+      scannerStatus.textContent = 'Starter kamera…';
+      try {
+        // Ensure we have device list
+        await updateCameraDevices();
+        const config = { fps: 10, qrbox: { width: 280, height: 280 } };
+        const cameraId = state.activeCameraId || (state.availableDevices[0] && state.availableDevices[0].id);
+        if(!cameraId){
+          scannerStatus.textContent = 'Ingen kamera fundet';
+          return;
+        }
+
+        state.qrScanner = new Html5Qrcode(/* element id */ "qr-reader", /* verbose= */ false);
+        await state.qrScanner.start(
+          { deviceId: { exact: cameraId } },
+          config,
+          qrCodeSuccessCallback,
+          qrCodeErrorCallback
+        );
+        state.scannerRunning = true;
+        scannerStatus.textContent = 'Scanning…';
+      } catch(err){
+        console.error('startScanner err', err);
+        scannerStatus.textContent = 'Kamera kunne ikke startes. Tilladelser?';
+        alert('Kan ikke åbne kameraet. Tjek tilladelser i browseren eller prøv igen.');
+        state.scannerRunning = false;
+      }
+    }
+    function qrCodeSuccessCallback(decodedText, decodedResult){
+      // Called when a QR code is detected
+      // Stop camera while confirming
+      if(!state.qrScanner) return;
+      // Avoid multiple rapid triggers
+      // Stop the scanner then show confirm
+      state.qrScanner.stop().then(()=>{
+        state.scannerRunning = false;
+        state.lastResult = decodedText;
+        showConfirmModal(decodedText);
+      }).catch(err=>{
+        console.warn('Stop failed', err);
+        state.scannerRunning = false;
+        state.lastResult = decodedText;
+        showConfirmModal(decodedText);
+      });
+    }
+    function qrCodeErrorCallback(err){
+      // optional: we ignore transient scan errors
+      //console.debug('scan error', err);
+    }
+
+    async function stopScanner(){
+      if(state.qrScanner && state.scannerRunning){
+        try{
+          await state.qrScanner.stop();
+        }catch(e){ /* ignore */ }
+      }
+      if(state.qrScanner){
+        try{ state.qrScanner.clear(); }catch(e){}
+        state.qrScanner = null;
+      }
+      state.scannerRunning = false;
+      scannerStatus.textContent = 'Scanner stoppet';
+    }
+
+    // Camera devices
+    async function updateCameraDevices(){
+      try{
+        const devices = await Html5Qrcode.getCameras();
+        state.availableDevices = (devices || []).map(d=>({ id: d.id, label: d.label || d.id }));
+        // choose device if none selected
+        if(state.availableDevices.length && !state.activeCameraId){
+          // try to prefer environment/back camera using label heuristics
+          const found = state.availableDevices.find(d => /back|rear|environment|bak/i.test(d.label)) || state.availableDevices[0];
+          state.activeCameraId = found.id;
+        }
+      }catch(e){
+        console.warn('No camera list', e);
+        state.availableDevices = [];
+      }
+    }
+
+    async function toggleCamera(){
+      if(!state.availableDevices || state.availableDevices.length < 2){
+        alert('Kun ét kamera fundet på enheden.');
+        return;
+      }
+      // pick next
+      const idx = state.availableDevices.findIndex(d=>d.id===state.activeCameraId);
+      const next = state.availableDevices[(idx+1) % state.availableDevices.length];
+      state.activeCameraId = next.id;
+      // restart scanner if running
+      if(state.scannerRunning){
+        await stopScanner();
+        await startScanner();
+      } else {
+        alert('Kamera skiftet til: ' + (next.label || 'ukendt'));
+      }
+    }
+
+    // Small utility
+    function escapeHtml(str){
+      if(!str && str !== 0) return '';
+      return String(str)
+        .replace(/&/g,'&amp;')
+        .replace(/</g,'&lt;')
+        .replace(/>/g,'&gt;')
+        .replace(/"/g,'&quot;')
+        .replace(/'/g,'&#039;');
+    }
+
+    // Boot app
+    boot();
+
+  </script>
+</body>
+</html>
