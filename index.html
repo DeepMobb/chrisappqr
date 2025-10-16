@@ -44,10 +44,10 @@
 <body>
   <div class="app">
     <header>
-      <div class="logo">QR</div>
+      <div class="logo">RW</div>
       <div>
         <h1>Opfyldningsliste</h1>
-        <p class="lead">Hej Chris. Er Iphone eller Android bedst?</p>
+        <p class="lead">ROCKWOOL Vamdrup</p>
       </div>
     </header>
 
@@ -122,13 +122,13 @@
     <canvas id="hiddenCanvas" style="display:none;"></canvas>
   </div>
 
-  <!-- libs: jsQR (scanner), jsPDF + autotable (pdf) -->
+  <!-- libs -->
   <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
 
   <script>
-    // --- Elements & state ---
+    // Elements & state
     const mainScreen = document.getElementById('mainScreen');
     const initView = document.getElementById('initView');
     const newListBtn = document.getElementById('newListBtn');
@@ -162,7 +162,21 @@
     let items = []; // aggregated items in-memory for current report
     const STORAGE_KEY = 'qr_reports_v1';
 
-    // --- Helpers ---
+    // Date helpers
+    function formatDateDMY(date) {
+      const d = String(date.getDate()).padStart(2,'0');
+      const m = String(date.getMonth()+1).padStart(2,'0');
+      const y = date.getFullYear();
+      return `${d}/${m}/${y}`;
+    }
+    function formatDateForFilename(date) {
+      const d = String(date.getDate()).padStart(2,'0');
+      const m = String(date.getMonth()+1).padStart(2,'0');
+      const y = date.getFullYear();
+      return `${d}-${m}-${y}`;
+    }
+
+    // Helpers
     function splitLines(text){
       if (text == null) return {line1:'', line2:'', rest:''};
       const parts = String(text).replace(/\r/g,'').split('\n').map(s=>s.trim());
@@ -176,9 +190,9 @@
       return idx === -1 ? str : str.slice(idx+1).trim();
     }
     function escapeHtml(text){ if (typeof text !== 'string') text = String(text); return text.replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
-    function itemKeyFromRaw(raw){ return raw; } // aggregate by exact raw QR text; can change to varenummer+materiale if desired
+    function itemKeyFromRaw(raw){ return raw; }
 
-    // --- Load & manage reports ---
+    // Load reports
     function loadReports(){
       reportsList.innerHTML = '';
       const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
@@ -197,30 +211,28 @@
     }
     function deleteReport(id){ let saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); saved = saved.filter(r=>r.id!==id); localStorage.setItem(STORAGE_KEY, JSON.stringify(saved)); loadReports(); }
 
-    // Open report (table)
+    // Open report
     function openReport(id){
       const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
       const rep = saved.find(r=>r.id===id);
       if(!rep) return alert('Kunne ikke finde rapport.');
       reportTitle.textContent = rep.title || 'Rapport';
-      reportMeta.textContent = 'Oprettet: ' + new Date(rep.created).toLocaleString() + ' — Poster: ' + (rep.items ? rep.items.length : 0);
+      reportMeta.textContent = 'Oprettet: ' + new Date(rep.created).toLocaleDateString() + ' — Poster: ' + (rep.items ? rep.items.length : 0);
       reportTbody.innerHTML = '';
       (rep.items || []).forEach((it, idx)=>{
-        let dataStr = '', varenummer='', materiale='', antal='';
-        if (typeof it === 'string'){ dataStr=it; const lines=splitLines(dataStr); varenummer=afterColon(lines.line1); materiale=afterColon(lines.line2); antal=''; }
+        let dataStr = '', varenummer = '', materiale = '', antal = '';
+        if (typeof it === 'string') { dataStr = it; const lines = splitLines(dataStr); varenummer = afterColon(lines.line1); materiale = afterColon(lines.line2); antal = ''; }
         else { dataStr = it.data || ''; varenummer = it.varenummer || afterColon(splitLines(dataStr).line1); materiale = it.materiale || afterColon(splitLines(dataStr).line2); antal = (typeof it.qty !== 'undefined') ? it.qty : ''; }
-        const tr=document.createElement('tr');
-        [idx+1, varenummer, materiale, antal].forEach(v=>{ const td=document.createElement('td'); td.textContent = v; tr.appendChild(td); });
+        const tr = document.createElement('tr');
+        [idx+1, varenummer, materiale, antal].forEach(v=>{ const td = document.createElement('td'); td.textContent = v; tr.appendChild(td); });
         reportTbody.appendChild(tr);
       });
       reportModalWrap.style.display = 'flex';
-      // save current opened report id for export
       reportModalWrap.dataset.currentReportId = id;
     }
+    closeReportModal.addEventListener('click', ()=> reportModalWrap.style.display = 'none');
 
-    closeReportModal.addEventListener('click', ()=> reportModalWrap.style.display='none');
-
-    // --- New list / initiate view ---
+    // New list / render items
     newListBtn.addEventListener('click', ()=>{ items=[]; renderItems(); mainScreen.style.display='none'; initView.style.display='block'; });
     backToMain.addEventListener('click', ()=>{ initView.style.display='none'; mainScreen.style.display='block'; });
 
@@ -229,41 +241,39 @@
       if (!items.length){ const note=document.createElement('div'); note.className='muted-note'; note.textContent='Ingen poster endnu. Brug kameraet for at scanne QR-koder.'; itemsList.appendChild(note); return; }
       items.forEach((it, idx)=>{
         const title = (it.varenummer||'') + (it.materiale ? ' — ' + it.materiale : '');
-        const el=document.createElement('div'); el.className='item';
-        const left=document.createElement('div'); left.style.flex='1'; left.innerHTML=`<div class="txt">${escapeHtml(title)}</div><div class="meta">${new Date(it._when||Date.now()).toLocaleString()}</div>`;
-        const qty=document.createElement('div'); qty.className='qty-badge'; qty.textContent = it.qty || 0;
-        const right=document.createElement('div'); right.style.display='flex'; right.style.flexDirection='column'; right.style.gap='8px';
-        const expand=document.createElement('button'); expand.className='ghost'; expand.textContent='Vis / skjul';
-        const rem=document.createElement('button'); rem.className='ghost'; rem.textContent='Fjern'; rem.onclick=()=>{ items.splice(idx,1); renderItems(); };
+        const el = document.createElement('div'); el.className='item';
+        const left = document.createElement('div'); left.style.flex='1'; left.innerHTML = `<div class="txt">${escapeHtml(title)}</div><div class="meta">${new Date(it._when||Date.now()).toLocaleString()}</div>`;
+        const qty = document.createElement('div'); qty.className='qty-badge'; qty.textContent = it.qty || 0;
+        const right = document.createElement('div'); right.style.display='flex'; right.style.flexDirection='column'; right.style.gap='8px';
+        const expand = document.createElement('button'); expand.className='ghost'; expand.textContent='Vis / skjul';
+        const rem = document.createElement('button'); rem.className='ghost'; rem.textContent='Fjern'; rem.onclick = ()=>{ items.splice(idx,1); renderItems(); };
         right.appendChild(expand); right.appendChild(rem);
-        const expanded=document.createElement('div'); expanded.className='full-text'; expanded.style.display='none'; expanded.textContent = it.data || '';
+        const expanded = document.createElement('div'); expanded.className='full-text'; expanded.style.display='none'; expanded.textContent = it.data || '';
         expand.onclick = ()=> expanded.style.display = expanded.style.display === 'none' ? 'block' : 'none';
         el.appendChild(left); el.appendChild(qty); el.appendChild(right);
         itemsList.appendChild(el); itemsList.appendChild(expanded);
       });
     }
 
-    // --- Save report ---
+    // Save report - title = "Opfyldningsliste dd/mm/YYYY"
     saveReportBtn.addEventListener('click', ()=>{
       if (!items.length){ if (!confirm('Listen er tom. Vil du gemme en tom rapport?')) return; }
       const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
-      const report = { id: 'r_' + Date.now(), title: 'Rapport ' + new Date().toLocaleString(), created: Date.now(), items: items.map(i=>({ data:i.data||'', varenummer:i.varenummer||'', materiale:i.materiale||'', qty:i.qty||0, _when:i._when||Date.now() })) };
+      const todayStr = formatDateDMY(new Date());
+      const report = { id: 'r_' + Date.now(), title: 'Opfyldningsliste ' + todayStr, created: Date.now(), items: items.map(i=>({ data:i.data||'', varenummer:i.varenummer||'', materiale:i.materiale||'', qty:i.qty||0, _when:i._when||Date.now() })) };
       saved.push(report); localStorage.setItem(STORAGE_KEY, JSON.stringify(saved));
-      alert('Rapport gemt.'); items=[]; renderItems(); initView.style.display='none'; mainScreen.style.display='block'; loadReports();
+      alert('Rapport gemt.');
+      items = []; renderItems(); initView.style.display='none'; mainScreen.style.display='block'; loadReports();
     });
 
-    // --- Scanner logic (BarcodeDetector or jsQR fallback) ---
+    // Scanner
     let barcodeDetector = null;
     if ('BarcodeDetector' in window) { try { barcodeDetector = new BarcodeDetector({formats:['qr_code']}); } catch(e){ barcodeDetector=null; } }
 
     openScannerBtn.addEventListener('click', async ()=>{ scannerModal.style.display='flex'; foundArea.style.display='none'; foundText.textContent=''; qtyInput.value=1; await startCameraAndScan(); });
     closeScanner.addEventListener('click', ()=>{ stopCamera(); scannerModal.style.display='none'; });
 
-    acceptBtn.addEventListener('click', ()=>{
-      if (!lastFound) return;
-      let q = parseInt(qtyInput.value,10); if (isNaN(q) || q<1) q=1;
-      addOrAggregateItem(lastFound, q); renderItems(); foundArea.style.display='none'; lastFound=null; scannerMsg.textContent='Gemte. Fortsæt scanning...'; setTimeout(()=>scannerMsg.textContent='Kamera klar...',900);
-    });
+    acceptBtn.addEventListener('click', ()=>{ if (!lastFound) return; let q = parseInt(qtyInput.value,10); if (isNaN(q) || q<1) q=1; addOrAggregateItem(lastFound,q); renderItems(); foundArea.style.display='none'; lastFound=null; scannerMsg.textContent='Gemte. Fortsæt scanning...'; setTimeout(()=>scannerMsg.textContent='Kamera klar...',900); });
     declineBtn.addEventListener('click', ()=>{ foundArea.style.display='none'; lastFound=null; scannerMsg.textContent='Forsøg at scanne igen...'; });
 
     function addOrAggregateItem(rawData, qtyToAdd=1){
@@ -272,7 +282,7 @@
       const {line1,line2} = splitLines(rawData);
       const varenummer = afterColon(line1);
       const materiale = afterColon(line2);
-      if (existing){ existing.qty = (existing.qty||0) + qtyToAdd; existing._when=Date.now(); }
+      if (existing){ existing.qty = (existing.qty||0) + qtyToAdd; existing._when = Date.now(); }
       else { items.push({ key, data: rawData, varenummer, materiale, qty: qtyToAdd, _when: Date.now() }); }
     }
 
@@ -282,7 +292,7 @@
         stream = await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}, audio:false});
         video.srcObject = stream; await video.play(); scanning=true; scannerMsg.textContent='Søger efter QR...';
         if (barcodeDetector) runBarcodeDetector(); else runJsQr();
-      } catch(err){ console.error('Camera error',err); scannerMsg.textContent='Kunne ikke få adgang til kamera.'; alert('Kan ikke åbne kameraet: '+(err && err.message ? err.message : err)); scannerModal.style.display='none'; }
+      } catch(err){ console.error('Camera error', err); scannerMsg.textContent='Kunne ikke få adgang til kamera.'; alert('Kan ikke åbne kameraet: '+(err && err.message ? err.message : err)); scannerModal.style.display='none'; }
     }
     function stopCamera(){ scanning=false; if (stream){ stream.getTracks().forEach(t=>t.stop()); stream=null; } video.pause(); video.srcObject=null; foundArea.style.display='none'; lastFound=null; }
 
@@ -291,7 +301,7 @@
         while (scanning) {
           try {
             const barcodes = await barcodeDetector.detect(video);
-            if (barcodes && barcodes.length) { const b=barcodes[0]; if (b && b.rawValue){ handleFound(b.rawValue); await new Promise(r=>setTimeout(r,800)); } }
+            if (barcodes && barcodes.length) { const b = barcodes[0]; if (b && b.rawValue){ handleFound(b.rawValue); await new Promise(r=>setTimeout(r,800)); } }
           } catch(e){ console.warn('BarcodeDetector error', e); runJsQr(); return; }
           await new Promise(r=>setTimeout(r,200));
         }
@@ -302,106 +312,90 @@
       function frameLoop(){
         if (!scanning) return;
         if (video.readyState === video.HAVE_ENOUGH_DATA) {
-          const vw=video.videoWidth, vh=video.videoHeight;
-          if (vw && vh){ hiddenCanvas.width=vw; hiddenCanvas.height=vh; ctx.drawImage(video,0,0,vw,vh); const imgd = ctx.getImageData(0,0,vw,vh); const code = jsQR(imgd.data, vw, vh, {inversionAttempts:'attemptBoth'}); if (code && code.data) handleFound(code.data); }
+          const vw = video.videoWidth, vh = video.videoHeight;
+          if (vw && vh){ hiddenCanvas.width = vw; hiddenCanvas.height = vh; ctx.drawImage(video,0,0,vw,vh); const imgd = ctx.getImageData(0,0,vw,vh); const code = jsQR(imgd.data, vw, vh, {inversionAttempts:'attemptBoth'}); if (code && code.data) handleFound(code.data); }
         }
         requestAnimationFrame(frameLoop);
       }
       requestAnimationFrame(frameLoop);
     }
-    function handleFound(data){ if (lastFound===data) return; lastFound=data; foundText.textContent=data; foundArea.style.display='block'; qtyInput.value=1; scannerMsg.textContent='QR fundet - angiv antal, godkend eller afvis'; }
+    function handleFound(data){ if (lastFound === data) return; lastFound = data; foundText.textContent = data; foundArea.style.display='block'; qtyInput.value = 1; scannerMsg.textContent='QR fundet - angiv antal, godkend eller afvis'; }
 
-    // --- Export functionality ---
-    // Build plain text body and rows
+    // --- Export (PDF only in mail attachment) ---
     function buildReportTextAndRows(report){
-      const lines = [];
-      lines.push(report.title || 'Rapport');
-      lines.push('Oprettet: ' + new Date(report.created).toLocaleString());
-      lines.push('');
-      lines.push('#;Varenummer;Materiale;Antal');
       const rows = [];
       (report.items || []).forEach((it, idx)=>{
         let dataStr='', varenummer='', materiale='', antal='';
         if (typeof it === 'string'){ dataStr = it; const sp = splitLines(dataStr); varenummer = afterColon(sp.line1); materiale = afterColon(sp.line2); antal=''; }
         else { dataStr = it.data||''; varenummer = it.varenummer || afterColon(splitLines(dataStr).line1); materiale = it.materiale || afterColon(splitLines(dataStr).line2); antal = (typeof it.qty !== 'undefined') ? String(it.qty) : ''; }
         rows.push([String(idx+1), varenummer, materiale, antal]);
-        lines.push(`${idx+1};${varenummer};${materiale};${antal}`);
       });
-      const bodyText = lines.join('\n');
-      return { bodyText, rows };
+      return { rows };
     }
 
-    // Generate PDF (uses jsPDF + autotable)
     async function generatePdfBlob(report){
       const { jsPDF } = window.jspdf;
       const doc = new jsPDF({unit:'pt', format:'a4'});
       const title = report.title || 'Rapport';
       doc.setFontSize(14); doc.text(title, 40, 40);
-      doc.setFontSize(10); doc.text('Oprettet: ' + new Date(report.created).toLocaleString(), 40, 58);
+      doc.setFontSize(10); doc.text('Oprettet: ' + formatDateDMY(new Date(report.created || Date.now())), 40, 58);
       const { rows } = buildReportTextAndRows(report);
-      // autotable expects arrays
       doc.autoTable({ startY: 80, head: [['#','Varenummer','Materiale','Antal']], body: rows, styles:{fontSize:10}, headStyles:{fillColor:[200,30,45]} });
       const blob = doc.output('blob');
       return blob;
     }
 
-    // Attempt to share (Web Share API) or fallback to download + mailto
+    // Export by id: share file if possible, else download and open mailto with subject only
     async function exportReportById(id){
       const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
       const rep = saved.find(r=>r.id===id);
       if (!rep) return alert('Kunne ikke finde rapport.');
-      const { bodyText, rows } = buildReportTextAndRows(rep);
       try {
         const pdfBlob = await generatePdfBlob(rep);
-        const filename = (rep.title || 'rapport') .replace(/[^\w\d\-_. ]/g,'_') + '.pdf';
+        const datePart = formatDateForFilename(new Date(rep.created || Date.now()));
+        const filename = `Opfyldningsliste_${datePart}.pdf`;
         const file = new File([pdfBlob], filename, { type: 'application/pdf' });
-        // If Web Share with files is supported, use it (mobile Chrome, etc.)
+
+        // Use Web Share API with files if possible (no body text)
         if (navigator.canShare && navigator.canShare({ files: [file] })) {
-          await navigator.share({ title: rep.title || 'Rapport', text: bodyText, files: [file] });
-          // note: after navigator.share user chooses email app; it's up to that app to include text/file.
+          await navigator.share({ title: rep.title || 'Opfyldningsliste', files: [file] });
           return;
         }
-        // If navigator.share supports files even without canShare check
-        if (navigator.share && navigator.share.length && typeof navigator.share === 'function') {
+        if (navigator.share && typeof navigator.share === 'function') {
           try {
-            await navigator.share({ title: rep.title || 'Rapport', text: bodyText, files: [file] });
+            await navigator.share({ title: rep.title || 'Opfyldningsliste', files: [file] });
             return;
           } catch (err) {
-            // maybe share failed (desktop), continue to fallback
             console.warn('navigator.share failed or not supported for files', err);
           }
         }
-        // Fallback: trigger PDF download and open mailto with body text
-        // 1) download PDF
+
+        // Fallback: download PDF and open mailto with subject only (no body)
         const url = URL.createObjectURL(pdfBlob);
         const a = document.createElement('a'); a.href = url; a.download = filename; document.body.appendChild(a); a.click(); a.remove();
         setTimeout(()=>URL.revokeObjectURL(url), 10000);
-        // 2) open mail client with subject + body. Note: mailto has url-length limits.
-        const subject = encodeURIComponent(rep.title || 'Rapport');
-        const body = encodeURIComponent(bodyText);
-        const mailto = `mailto:?subject=${subject}&body=${body}`;
-        // open mail client in new window/tab
+
+        const subject = encodeURIComponent(rep.title || 'Opfyldningsliste');
+        const mailto = `mailto:?subject=${subject}`;
+        // open mail client (user must attach downloaded PDF manually)
         window.location.href = mailto;
-        alert('PDF er downloadet. Åbn din mailklient og vedhæft PDF-filen, hvis den ikke allerede er vedhæftet automatisk.');
+        alert('PDF er downloadet. Åbn din mailklient og vedhæft PDF-filen, hvis den ikke blev vedhæftet automatisk.');
       } catch (err) {
         console.error('Export error', err);
         alert('Der opstod en fejl under eksport. Se konsollen for detaljer.');
       }
     }
 
-    // Wire export button
     exportReportBtn.addEventListener('click', ()=>{
       const id = reportModalWrap.dataset.currentReportId;
       if (!id) return alert('Ingen rapport valgt.');
       exportReportById(id);
     });
 
-    // --- initial load & housekeeping ---
+    // initial
     loadReports();
     window.addEventListener('pagehide', ()=>{ if (stream) stream.getTracks().forEach(t=>t.stop()); });
     window.addEventListener('beforeunload', ()=>{ if (stream) stream.getTracks().forEach(t=>t.stop()); });
-
-    // --- End of script ---
   </script>
 </body>
 </html>
