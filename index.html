@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-  <title>QR List Scanner</title>
+  <title>Opfyldningsliste - VAM</title>
 
   <script>
     window.startNewList = function(){
@@ -95,7 +95,7 @@
     .scan-line{position:absolute;left:10%;right:10%;height:2px;background:#ff0000;box-shadow:0 0 4px red; animation:scanmove 2s ease-in-out infinite;}
     @keyframes scanmove{0%{top:10%}50%{top:90%}100%{top:10%}}
 
-    /* --- FIX: FULD SKÆRM RESULTAT & SCROLL --- */
+    /* --- FULD SKÆRM RESULTAT & SCROLL --- */
     #foundArea {
         position: fixed; 
         top: 0; left: 0; width: 100%; height: 100%;
@@ -103,8 +103,8 @@
         background: #ffffff;
         display: none;
         flex-direction: column;
-        overflow-y: auto; /* Tillad scroll */
-        -webkit-overflow-scrolling: touch; /* Smooth scroll på iOS */
+        overflow-y: auto; 
+        -webkit-overflow-scrolling: touch; 
         padding: 24px;
     }
 
@@ -112,7 +112,7 @@
         max-width: 600px; 
         margin: 0 auto; 
         width: 100%; 
-        padding-bottom: 100px; /* MEGET VIGTIGT: Ekstra plads i bunden så man kan scrolle helt ned */
+        padding-bottom: 100px; 
     }
 
     .controls{display:grid; grid-template-columns: 1fr 1fr; gap:16px; margin-top:30px; padding-top:20px; border-top:1px solid #eee;}
@@ -120,12 +120,11 @@
     .num-input, .num-input-month, .unit-select {
         width:100%; padding:14px; border-radius:12px; border:1px solid #ddd; 
         font-size: 20px; text-align: center; font-weight:700; background:#f9f9f9; color: #333;
-        height: 54px; /* Ens højde */
+        height: 54px; 
     }
     
-    /* Specifik stil for select */
     .unit-select {
-        text-align-last: center; /* Centrerer tekst i dropdown */
+        text-align-last: center; 
         appearance: none;
         background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23333%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E");
         background-repeat: no-repeat;
@@ -134,9 +133,13 @@
     }
 
     .report-modal{width:95%; max-width:1000px; background:var(--card); border-radius:12px; padding:14px; max-height:90vh; overflow:auto;}
+    
+    /* Tabel Design */
     table.rtable{width:100%;border-collapse:collapse;margin-top:8px;}
-    table.rtable th, table.rtable td{padding:8px 10px;border-bottom:1px solid rgba(0,0,0,0.06);text-align:left;font-size:13px;vertical-align:middle;}
-    table.rtable th{background:#fff;font-weight:700;color:var(--dark)}
+    table.rtable th, table.rtable td{padding:10px;border-bottom:1px solid rgba(0,0,0,0.06);text-align:left;font-size:13px;vertical-align:middle;}
+    /* Tydelige Overskrifter */
+    table.rtable th{background:#e0e0e0; font-weight:700; color:var(--dark); border-bottom: 2px solid #ccc;}
+    
     .area-row { background:#f5f5f5; font-weight:700; }
     
     .error-banner { position:fixed; left:16px; right:16px; bottom:16px; background:#ffefef; color:#b00000; border:1px solid #b00000; padding:10px 12px; border-radius:8px; z-index:200; display:none;}
@@ -260,7 +263,7 @@
             <div id="reportMeta" class="muted-note" style="font-size:13px;margin-top:4px;"></div>
           </div>
           <div style="display:flex;gap:8px;">
-            <button id="exportReportBtn" class="ghost">PDF</button>
+            <button id="exportReportBtn" class="ghost">PDF (Mail)</button>
             <button id="closeReportModal" class="ghost">Luk</button>
           </div>
         </div>
@@ -268,14 +271,41 @@
         <div style="margin-top:12px;">
           <h3 style="margin:6px 0 8px 0;">Opfyldningsliste</h3>
           <div id="opfy_table_wrap">
-            <table class="rtable" id="opfyTable"><tbody id="opfyTbody"></tbody></table>
+            <table class="rtable" id="opfyTable">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Område</th>
+                  <th>Varenummer</th>
+                  <th>Materiale</th>
+                  <th>Lager</th>
+                  <th>Reol</th>
+                  <th>Hylde</th>
+                  <th>Antal</th>
+                  <th>Enhed</th>
+                </tr>
+              </thead>
+              <tbody id="opfyTbody"></tbody>
+            </table>
           </div>
         </div>
 
         <div style="margin-top:18px;">
           <h3 style="margin:6px 0 8px 0;">Månedsoptælling</h3>
           <div id="month_table_wrap">
-            <table class="rtable" id="monthTable"><tbody id="monthTbody"></tbody></table>
+            <table class="rtable" id="monthTable">
+               <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Område</th>
+                  <th>Varenummer</th>
+                  <th>Materiale</th>
+                  <th>Månedsantal</th>
+                  <th>Enhed</th>
+                </tr>
+              </thead>
+              <tbody id="monthTbody"></tbody>
+            </table>
           </div>
         </div>
       </div>
@@ -320,7 +350,7 @@
       const qtyInput = document.getElementById('qtyInput');
       const monthCheckbox = document.getElementById('monthCheckbox');
       const monthQtyInput = document.getElementById('monthQtyInput');
-      const monthUnitSelect = document.getElementById('monthUnitSelect'); // Ny
+      const monthUnitSelect = document.getElementById('monthUnitSelect');
       const monthInputRow = document.getElementById('monthInputRow');
 
       const reportModalWrap = document.getElementById('reportModalWrap');
@@ -328,6 +358,7 @@
       const reportMeta = document.getElementById('reportMeta');
       const opfyTbody = document.getElementById('opfyTbody');
       const monthTbody = document.getElementById('monthTbody');
+      const exportReportBtn = document.getElementById('exportReportBtn');
 
       let stream = null, scanning = false, lastFound = null;
       let items = [];
@@ -397,14 +428,13 @@
       }
       window.removeItem=function(idx){ items.splice(idx,1); renderItems(); };
 
-      // Ny parameter: monthUnit
       function addOrAggregateItem(rawData, qtyToAdd, monthQtyToAdd, monthUnit){ 
         const key=itemKeyFromRaw(rawData); 
         const existing=items.find(i=>i.key===key); 
         if(existing){ 
             existing.qty+=qtyToAdd; 
             existing.monthQty+=monthQtyToAdd; 
-            if(monthUnit) existing.monthUnit = monthUnit; // Opdater enhed hvis valgt
+            if(monthUnit) existing.monthUnit = monthUnit; 
             existing._when=Date.now(); 
         } 
         else { 
@@ -413,7 +443,7 @@
                 key, data:rawData, 
                 qty:qtyToAdd, 
                 monthQty:monthQtyToAdd, 
-                monthUnit: monthUnit || '', // Gem enhed
+                monthUnit: monthUnit || '', 
                 _when:Date.now(), ...parsed 
             }); 
         } 
@@ -431,16 +461,64 @@
            const row=`<tr><td>${idx+1}</td><td>${it.område||''}</td><td>${it.varenummer||''}</td><td>${it.materiale||''}</td><td>${it.lager||''}</td><td>${it.reol||''}</td><td>${it.hylde||''}</td><td>${it.qty}</td><td>${it.enhed||''}</td></tr>`;
            t1.insertAdjacentHTML('beforeend',row);
            if(it.monthQty>0){
-              // Brug monthUnit hvis den findes, ellers enhed fra QR
               const u = it.monthUnit || it.enhed || '';
               const row2=`<tr><td>${idx+1}</td><td>${it.område||''}</td><td>${it.varenummer||''}</td><td>${it.materiale||''}</td><td>${it.monthQty}</td><td>${u}</td></tr>`;
               t2.insertAdjacentHTML('beforeend',row2);
            }
         });
         reportModalWrap.style.display='flex'; 
+        // Save ID for export
+        reportModalWrap.dataset.currentId = id;
       }
       window.openReport=openReport;
       document.getElementById('closeReportModal').addEventListener('click', ()=> reportModalWrap.style.display='none');
+
+      // --- EXPORT FUNCTIONALITY (SHARE SHEET) ---
+      if(exportReportBtn){
+        exportReportBtn.addEventListener('click', async () => {
+             const { jsPDF } = window.jspdf;
+             const doc = new jsPDF();
+             
+             // Titel
+             doc.setFontSize(18);
+             doc.text(reportTitle.textContent, 14, 15);
+             doc.setFontSize(10);
+             doc.text(reportMeta.textContent, 14, 22);
+             
+             // Opfyldningsliste
+             doc.setFontSize(14);
+             doc.text("Opfyldningsliste", 14, 32);
+             doc.autoTable({ html: '#opfyTable', startY: 35, theme: 'grid' });
+             
+             // Månedsoptælling (kun hvis data)
+             if(document.getElementById('monthTable').rows.length > 1) {
+                let finalY = doc.lastAutoTable.finalY || 40;
+                doc.text("Månedsoptælling", 14, finalY + 10);
+                doc.autoTable({ html: '#monthTable', startY: finalY + 15, theme: 'grid' });
+             }
+
+             // Generate Blob
+             const pdfBlob = doc.output('blob');
+             const file = new File([pdfBlob], "Rapport.pdf", { type: "application/pdf" });
+
+             // Try Native Share
+             if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+                try {
+                    await navigator.share({
+                        files: [file],
+                        title: 'Opfyldningsrapport',
+                        text: 'Her er den eksporterede rapport.'
+                    });
+                } catch (err) {
+                    console.log('Deling annulleret', err);
+                }
+             } else {
+                // Fallback: Download
+                doc.save('Rapport.pdf');
+                alert('PDF downloadet. Åbn din mail og vedhæft filen manuelt.');
+             }
+        });
+      }
 
       // --- KAMERA LOOP ---
       function handleFound(data) {
@@ -451,12 +529,10 @@
         
         if(scanBoxOverlay) scanBoxOverlay.style.display='none';
         
-        // VIS FULD SIDE
         if(foundArea) {
             foundArea.style.display='flex'; 
             if(foundText) foundText.textContent=data;
             if(qtyInput) qtyInput.value=1;
-            // Reset måned felter
             if(monthCheckbox) monthCheckbox.checked = false;
             setMonthVisibility();
         }
@@ -534,7 +610,6 @@
         if(!lastFound) return;
         let q=parseInt(qtyInput.value,10)||0; 
         let m=monthCheckbox.checked ? (parseInt(monthQtyInput.value,10)||0) : 0;
-        // Hent valgt enhed hvis månedsrapport er valgt
         let u = monthCheckbox.checked ? monthUnitSelect.value : '';
 
         addOrAggregateItem(lastFound, q, m, u); 
