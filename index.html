@@ -2,66 +2,153 @@
 <html lang="da">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
   <title>QR List Scanner</title>
+
+  <script>
+    window.startNewList = function(){
+      try {
+        if (window._appStartNewList) return window._appStartNewList();
+        const main = document.getElementById('mainScreen');
+        const init = document.getElementById('initView');
+        if (main && init) {
+          main.style.display = 'none';
+          init.style.display = 'block';
+        } else {
+          window._pendingNewList = true;
+        }
+      } catch (e) { console.warn(e); }
+    };
+  </script>
+
   <style>
     :root{
       --bg:#F5F5F5; --accent:#C82333; --dark:#111; --white:#fff; --muted:#777; --card:#fff;
       font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, Arial;
     }
+    * { box-sizing: border-box; }
     html,body{height:100%;margin:0;background:linear-gradient(180deg,var(--bg),#eee);color:var(--dark);}
-    .app{max-width:1000px;margin:20px auto;padding:18px 18px 96px 18px;}
+    .app{max-width:800px;margin:0 auto;padding:16px; padding-bottom: 100px;} 
+    
     header{display:flex;align-items:center;gap:12px;margin-bottom:18px;}
-    .logo-img{width:56px;height:56px;border-radius:12px;object-fit:cover;display:block;box-shadow:0 6px 18px rgba(0,0,0,0.12);}
+    .logo-img{width:50px;height:50px;border-radius:10px;object-fit:cover;box-shadow:0 4px 12px rgba(0,0,0,0.1);}
     h1{margin:0;font-size:18px} p.lead{margin:0;color:var(--muted);font-size:13px}
-    .card{background:var(--card);border-radius:12px;padding:18px;box-shadow:0 6px 18px rgba(0,0,0,0.06);}
-    button.primary{background:var(--accent);color:var(--white);border:0;padding:12px 18px;border-radius:10px;font-weight:600;cursor:pointer;}
+    
+    .card{background:var(--card);border-radius:12px;padding:16px;box-shadow:0 4px 12px rgba(0,0,0,0.05); margin-bottom: 12px;}
+    
+    /* KNAP DESIGN */
+    button { cursor:pointer; font-family:inherit; border:none; outline:none; -webkit-tap-highlight-color: transparent; font-size: 16px; font-weight: 600; padding: 14px 20px; border-radius: 12px; transition: opacity 0.2s; display: inline-flex; align-items: center; justify-content: center; }
+    button:active { opacity: 0.8; }
+
+    .primary, .save-btn { background:var(--accent); color:var(--white); width: 100%; box-shadow: 0 4px 12px rgba(200,35,51,0.2); }
+    .danger { background: #ffebee; color: #c62828; width: 100%; }
+    .ghost { background: transparent; color: var(--muted); padding: 8px 12px; width: auto; font-size: 14px; }
+    
+    .fab { width:64px; height:64px; border-radius:20px; background:var(--dark); color:var(--white); font-size: 24px; box-shadow: 0 6px 16px rgba(0,0,0,0.2); }
+
+    .save-btn{position:sticky;bottom:12px;z-index:20; margin-left:12px; background:linear-gradient(90deg,var(--accent),#b71f2a);}
+    
     .muted-note{color:var(--muted);font-size:13px;}
     .reports{margin-top:14px;display:flex;flex-direction:column;gap:10px;}
-    .report-item{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;border-radius:10px;background:linear-gradient(180deg,var(--white),#fafafa);border:1px solid rgba(0,0,0,0.04);}
-    .items{min-height:220px;border-radius:10px;padding:12px;background:linear-gradient(180deg,#fff,#fbfbfb);border:1px dashed rgba(0,0,0,0.06);overflow:auto;}
-    .item{display:flex;gap:12px;align-items:center;padding:8px;border-radius:8px;border-bottom:1px dashed rgba(0,0,0,0.03);}
-    .qty-badge{background:#f3f3f3;border-radius:8px;padding:6px 10px;font-weight:700;color:var(--dark);border:1px solid rgba(0,0,0,0.06);text-align:center;min-width:56px;}
-    .month-badge{background:#fff;border-radius:8px;padding:2px 6px;font-size:11px;border:1px solid rgba(0,0,0,0.06);display:block;margin-top:6px;color:#333;}
-    .unit-text{font-size:11px;color:#555;margin-top:4px;}
+    .report-item{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;border-radius:10px;background:#fff;border:1px solid rgba(0,0,0,0.05);}
+    
+    .items{min-height:220px;border-radius:10px;padding:12px;background:#fff;border:1px dashed #ccc;overflow:auto;}
+    .item{display:flex;gap:12px;align-items:center;padding:8px;border-radius:8px;border-bottom:1px solid #eee;}
+    .qty-badge{background:#f3f3f3;border-radius:8px;padding:6px 10px;font-weight:700;color:var(--dark);text-align:center;min-width:40px;}
+    .month-badge{background:#fff;border-radius:4px;padding:2px 6px;font-size:10px;border:1px solid #ddd;display:block;margin-top:4px;color:#333;}
     .toolbar{display:flex;gap:12px;margin-top:12px;justify-content:space-between;align-items:center;}
-    .fab{width:56px;height:56px;border-radius:14px;background:var(--dark);color:var(--white);display:flex;align-items:center;justify-content:center;border:0;cursor:pointer;}
-    .save-btn{position:sticky;bottom:12px;z-index:20;flex:1;margin-left:12px;border-radius:12px;padding:12px 18px;background:linear-gradient(90deg,var(--accent),#b71f2a);color:var(--white);border:0;font-weight:600;cursor:pointer;}
-    .modal{position:fixed;left:0;top:0;right:0;bottom:0;display:flex;align-items:center;justify-content:center;z-index:100;background:rgba(0,0,0,0.45);padding:18px;}
-    .scanner{width:100%;max-width:720px;background:var(--card);border-radius:12px;overflow:hidden;display:flex;flex-direction:column;}
-    .video-wrap{position:relative;background:#000;display:flex;align-items:center;justify-content:center;min-height:300px;}
-    video{width:100%;height:auto;max-height:60vh;object-fit:cover;}
-    .scan-box{
-      position:absolute;
-      width:72%; max-width:560px;
-      height:46%; max-height:320px;
-      border-radius:12px;
-      border:3px dashed rgba(255,255,255,0.6);
-      box-shadow:0 0 0 9999px rgba(0,0,0,0.18) inset;
-      display:flex;align-items:center;justify-content:center;color:var(--white);font-weight:600;
+    
+    /* MODAL & SCANNER */
+    .modal{position:fixed;left:0;top:0;right:0;bottom:0;display:flex;align-items:center;justify-content:center;z-index:120;background:rgba(0,0,0,0.95);}
+    
+    .scanner{width:100%; height:100%; display:flex; flex-direction:column; position:relative;}
+    
+    .video-wrap{
+      width: 100%;
+      height: 100%;
+      background:#000; 
+      position: relative; 
+      overflow: hidden;
     }
-    .scan-line{position:absolute;left:12%;right:12%;height:2px;background:rgba(200,30,45,0.95);border-radius:2px;animation:scanmove 2.2s linear infinite;}
-    @keyframes scanmove{0%{top:22%}50%{top:58%}100%{top:22%}}
-    .found-popup{padding:12px;background:linear-gradient(180deg,#fff,#f8f8f8);border-radius:12px;margin:12px;}
-    .controls{display:flex;gap:8px;padding:10px;align-items:center;justify-content:flex-end;border-top:1px solid rgba(0,0,0,0.04);}
-    .num-input, .num-input-month {width:110px;padding:8px;border-radius:8px;border:1px solid rgba(0,0,0,0.08);}
-    .report-modal{width:100%;max-width:1100px;background:var(--card);border-radius:12px;padding:14px;max-height:85vh;overflow:auto;}
+    
+    video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    
+    .scan-box {
+      position: absolute;
+      width: 70%;
+      max-width: 300px;
+      aspect-ratio: 1/1;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      border-radius: 20px;
+      border: 2px solid rgba(255,255,255,0.8);
+      box-shadow: 0 0 0 100vmax rgba(0,0,0,0.5);
+      z-index: 10;
+      pointer-events: none;
+    }
+
+    .scan-line{position:absolute;left:10%;right:10%;height:2px;background:#ff0000;box-shadow:0 0 4px red; animation:scanmove 2s ease-in-out infinite;}
+    @keyframes scanmove{0%{top:10%}50%{top:90%}100%{top:10%}}
+
+    /* --- FIX: FULD SKÆRM RESULTAT & SCROLL --- */
+    #foundArea {
+        position: fixed; 
+        top: 0; left: 0; width: 100%; height: 100%;
+        z-index: 2000;
+        background: #ffffff;
+        display: none;
+        flex-direction: column;
+        overflow-y: auto; /* Tillad scroll */
+        -webkit-overflow-scrolling: touch; /* Smooth scroll på iOS */
+        padding: 24px;
+    }
+
+    .found-content { 
+        max-width: 600px; 
+        margin: 0 auto; 
+        width: 100%; 
+        padding-bottom: 100px; /* MEGET VIGTIGT: Ekstra plads i bunden så man kan scrolle helt ned */
+    }
+
+    .controls{display:grid; grid-template-columns: 1fr 1fr; gap:16px; margin-top:30px; padding-top:20px; border-top:1px solid #eee;}
+    
+    .num-input, .num-input-month, .unit-select {
+        width:100%; padding:14px; border-radius:12px; border:1px solid #ddd; 
+        font-size: 20px; text-align: center; font-weight:700; background:#f9f9f9; color: #333;
+        height: 54px; /* Ens højde */
+    }
+    
+    /* Specifik stil for select */
+    .unit-select {
+        text-align-last: center; /* Centrerer tekst i dropdown */
+        appearance: none;
+        background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23333%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E");
+        background-repeat: no-repeat;
+        background-position: right 12px top 50%;
+        background-size: 12px auto;
+    }
+
+    .report-modal{width:95%; max-width:1000px; background:var(--card); border-radius:12px; padding:14px; max-height:90vh; overflow:auto;}
     table.rtable{width:100%;border-collapse:collapse;margin-top:8px;}
     table.rtable th, table.rtable td{padding:8px 10px;border-bottom:1px solid rgba(0,0,0,0.06);text-align:left;font-size:13px;vertical-align:middle;}
     table.rtable th{background:#fff;font-weight:700;color:var(--dark)}
     .area-row { background:#f5f5f5; font-weight:700; }
-    .full-text{margin-top:8px;background:#fafafa;border-radius:8px;padding:8px;border:1px solid rgba(0,0,0,0.04);white-space:pre-wrap;font-size:13px;}
+    
     .error-banner { position:fixed; left:16px; right:16px; bottom:16px; background:#ffefef; color:#b00000; border:1px solid #b00000; padding:10px 12px; border-radius:8px; z-index:200; display:none;}
-    @media (max-width:760px){ .report-modal{padding:8px;} }
   </style>
 </head>
 <body>
   <div class="app">
     <header>
-      <img src="logo.png" alt="Opfyldningslogo" class="logo-img" />
+      <img src="logo.png" alt="Logo" class="logo-img" onerror="this.style.display='none'" />
       <div>
         <h1>QR List Scanner</h1>
-        <p class="lead">Simple scanner til opfyldningslister</p>
+        <p class="lead">Lagerstyring</p>
       </div>
     </header>
 
@@ -69,96 +156,111 @@
       <div style="display:flex;justify-content:space-between;align-items:center;">
         <div>
           <h2 style="margin:0 0 6px 0;">Velkommen, Hans</h2>
-          <div class="muted-note">Tryk "Ny liste" for at starte en ny rapport</div>
+          <div class="muted-note">Dine gemte lister</div>
         </div>
         <div><button id="newListBtn" class="primary">Ny liste</button></div>
       </div>
-      <div class="reports" id="reportsList" aria-live="polite" style="margin-top:16px;"></div>
+      <div class="reports" id="reportsList" style="margin-top:16px;"></div>
     </section>
 
     <section id="initView" style="display:none;margin-top:16px;">
       <div class="card">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-          <div><h3 style="margin:0;">Ny rapport</h3><small class="muted-note">Scan QR-koder og gem dem i rapporten</small></div>
+          <div><h3 style="margin:0;">Ny rapport</h3><small class="muted-note">Klar til scanning</small></div>
           <div><button id="backToMain" class="ghost">Tilbage</button></div>
         </div>
-        <div class="items" id="itemsList"><div class="muted-note">Ingen poster endnu. Brug kameraet for at scanne QR-koder.</div></div>
+        <div class="items" id="itemsList">
+           <div class="muted-note" style="padding:20px; text-align:center;">Listen er tom.<br>Tryk på kameraet for at starte.</div>
+        </div>
         <div class="toolbar">
-          <button id="openScannerBtn" class="fab" title="Scan QR" aria-label="Åbn kamera">📷</button>
+          <button id="openScannerBtn" class="fab" title="Scan QR">📷</button>
           <button id="saveReportBtn" class="save-btn">Gem rapport</button>
         </div>
       </div>
     </section>
 
     <div id="scannerModal" class="modal" style="display:none;">
-      <div class="scanner" role="dialog" aria-modal="true" aria-label="QR Scanner">
-        <div style="display:flex;justify-content:space-between;align-items:center;padding:10px;border-bottom:1px solid rgba(0,0,0,0.06);">
-          <div style="font-weight:600">Scanner</div>
-          <div><button id="closeScanner" class="ghost">Luk</button></div>
+      <div class="scanner">
+        
+        <div style="position:absolute; top:20px; right:20px; z-index:20;">
+           <button id="closeScanner" style="background:rgba(0,0,0,0.5); color:white; padding:10px 20px; border-radius:30px; font-size:14px; border:1px solid rgba(255,255,255,0.3);">Luk Scanner</button>
         </div>
 
         <div class="video-wrap">
           <video id="video" autoplay muted playsinline></video>
-          <div class="scan-box">
-            Hold QR i boksen
-            <div class="scan-line" aria-hidden="true"></div>
+          <div class="scan-box" id="scanBoxOverlay">
+            <div class="scan-line"></div>
           </div>
         </div>
 
         <div id="foundArea" style="display:none;">
-          <div class="found-popup">
-            <div style="font-weight:700">Scannet data</div>
-            <div id="foundText" style="word-break:break-word;margin-top:8px;color:var(--dark)"></div>
-
-            <!-- Antal -->
-            <div style="margin-top:8px;display:flex;gap:14px;align-items:center;">
-              <div style="display:flex;flex-direction:column;">
-                <label class="small">Antal (opfyldning)</label>
-                <input id="qtyInput" class="num-input" type="number" min="0" step="1" value="1">
-              </div>
+          <div class="found-content">
+            
+            <div style="margin-bottom: 20px; border-bottom: 1px solid #eee; padding-bottom:10px;">
+                <div style="font-weight:800; font-size:24px; color:var(--dark);">Fundet vare! 🎉</div>
+                <div style="color:#777; font-size:14px;">Bekræft venligst data nedenfor</div>
             </div>
 
-            <!-- Månedsrapport -->
-            <div id="monthContainer" style="margin-top:12px;display:flex;flex-direction:column;gap:8px;">
-              <div style="display:flex;align-items:center;gap:8px;">
-                <input id="monthCheckbox" type="checkbox" />
-                <label class="small" for="monthCheckbox">Tilføj til Månedsrapport</label>
-              </div>
-              <div id="monthInputRow" style="display:none;align-items:center;gap:8px;">
-                <label class="small" style="margin-right:6px;">Månedsantal</label>
-                <input id="monthQtyInput" class="num-input-month" type="number" min="0" step="1" value="0" />
-              </div>
+            <div style="font-weight:600; font-size:13px; text-transform:uppercase; color:#888; margin-bottom:6px;">Scannet tekst</div>
+            <div id="foundText" style="word-break:break-word; color:#111; font-weight:500; font-size:16px; margin-bottom:30px; line-height:1.5; background:#f0f0f0; padding:12px; border-radius:8px;"></div>
 
-              <!-- Torch + Capture -->
-              <div style="display:flex;gap:10px;margin-top:10px;">
-                <button id="toggleTorchBtn" class="ghost" type="button" style="display:none;">Tænd lommelygte</button>
-                <button id="captureBtn" class="ghost" type="button">Tag billede</button>
-              </div>
+            <div style="display:flex; gap:16px; align-items:flex-start;">
+               <div style="flex:1;">
+                   <label style="font-size:14px; font-weight:700; display:block; margin-bottom:8px; color:#333;">Antal stk.</label>
+                   <input id="qtyInput" class="num-input" type="number" min="0" step="1" value="1" inputmode="numeric">
+               </div>
+               
+               <div style="flex:1; padding-top:34px;">
+                  <label style="display:flex; align-items:center; gap:12px; cursor:pointer; background:#fff; border:2px solid #eee; padding:12px; border-radius:12px;">
+                    <input id="monthCheckbox" type="checkbox" style="width:24px; height:24px;" />
+                    <span style="font-size:14px; font-weight:600; line-height:1.2;">Måneds<br>rapport</span>
+                  </label>
+               </div>
+            </div>
 
-              <div class="muted-note">Når "Tilføj til Månedsrapport" er markeret, registreres månedsantal.</div>
+            <div id="monthInputRow" style="display:none; margin-top:24px;">
+               <div style="display:flex; gap:16px;">
+                   <div style="flex:1;">
+                       <label style="font-size:14px; font-weight:700; display:block; margin-bottom:8px; color:#333;">Antal til måned</label>
+                       <input id="monthQtyInput" class="num-input-month" type="number" min="0" step="1" value="0" inputmode="numeric" />
+                   </div>
+                   <div style="flex:1;">
+                       <label style="font-size:14px; font-weight:700; display:block; margin-bottom:8px; color:#333;">Enhed</label>
+                       <select id="monthUnitSelect" class="unit-select">
+                           <option value="STK">STK</option>
+                           <option value="RULL">RULL</option>
+                           <option value="KS">KS</option>
+                           <option value="PL">PL</option>
+                           <option value="Dunke">Dunke</option>
+                       </select>
+                   </div>
+               </div>
+            </div>
+
+            <div class="controls">
+              <button id="declineBtn" class="danger" style="height: 60px;">Afvis</button>
+              <button id="acceptBtn" class="primary" style="height: 60px;">Accepter</button>
+            </div>
+
+            <div style="text-align:center; margin-top:15px; color:#999; font-size:12px;">
+                Scroll ned hvis du ikke kan se knapperne
             </div>
 
           </div>
-        </div>
-
-        <div class="controls" style="margin-top:12px;">
-          <div id="scannerMsg" class="muted-note" style="flex:1;">Kamera klar...</div>
-          <button id="declineBtn" class="ghost danger">Afvis</button>
-          <button id="acceptBtn" class="primary">Accepter</button>
         </div>
 
       </div>
     </div>
 
     <div id="reportModalWrap" class="modal" style="display:none;">
-      <div class="report-modal" role="dialog" aria-modal="true" aria-label="Rapport">
+      <div class="report-modal">
         <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;">
           <div>
             <div id="reportTitle" style="font-weight:700;">Rapport</div>
             <div id="reportMeta" class="muted-note" style="font-size:13px;margin-top:4px;"></div>
           </div>
           <div style="display:flex;gap:8px;">
-            <button id="exportReportBtn" class="ghost">Eksportér</button>
+            <button id="exportReportBtn" class="ghost">PDF</button>
             <button id="closeReportModal" class="ghost">Luk</button>
           </div>
         </div>
@@ -166,23 +268,16 @@
         <div style="margin-top:12px;">
           <h3 style="margin:6px 0 8px 0;">Opfyldningsliste</h3>
           <div id="opfy_table_wrap">
-            <table class="rtable" id="opfyTable">
-              <thead><tr><th>#</th><th>Område</th><th>Varenummer</th><th>Materiale</th><th>Lager</th><th>Reol</th><th>Hylde</th><th>Antal</th><th>Enhed</th></tr></thead>
-              <tbody id="opfyTbody"></tbody>
-            </table>
+            <table class="rtable" id="opfyTable"><tbody id="opfyTbody"></tbody></table>
           </div>
         </div>
 
         <div style="margin-top:18px;">
           <h3 style="margin:6px 0 8px 0;">Månedsoptælling</h3>
           <div id="month_table_wrap">
-            <table class="rtable" id="monthTable">
-              <thead><tr><th>#</th><th>Område</th><th>Varenummer</th><th>Materiale</th><th>Månedsantal</th><th>Enhed</th></tr></thead>
-              <tbody id="monthTbody"></tbody>
-            </table>
+            <table class="rtable" id="monthTable"><tbody id="monthTbody"></tbody></table>
           </div>
         </div>
-
       </div>
     </div>
 
@@ -190,42 +285,29 @@
     <canvas id="hiddenCanvas" style="display:none;"></canvas>
   </div>
 
-  <!-- libs -->
   <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
 
   <script>
-    // Error banner helper
     const errorBanner = document.getElementById('errorBanner');
-    function showError(msg){ console.error(msg); errorBanner.textContent = typeof msg==='string' ? msg : (msg && msg.message ? msg.message : JSON.stringify(msg)); errorBanner.style.display='block'; setTimeout(()=>errorBanner.style.display='none',10000); }
-    window.addEventListener('error', e=> showError(e.message || e));
-    window.addEventListener('unhandledrejection', e=> showError(e.reason || e));
+    function showError(msg){ console.error(msg); errorBanner.textContent = typeof msg === 'string' ? msg : (msg && msg.message ? msg.message : 'Fejl'); errorBanner.style.display='block'; setTimeout(()=>errorBanner.style.display='none',5000); }
 
-    // startNewList defined early so inline onclick works
-    function startNewList(){
-      try{
-        if (window._appStartNewList) return window._appStartNewList();
-        document.getElementById('mainScreen').style.display = 'none';
-        document.getElementById('initView').style.display = 'block';
-      } catch(err){ showError(err); }
-    }
+    window.startNewList = function(){
+      try {
+        const main = document.getElementById('mainScreen');
+        const init = document.getElementById('initView');
+        if (main && init) { main.style.display='none'; init.style.display='block'; }
+      } catch (err) { showError(err); }
+    };
 
-    document.addEventListener('DOMContentLoaded', ()=> {
-      try { initApp(); } catch(err){ showError(err); }
-    });
+    document.addEventListener('DOMContentLoaded', () => { try { initApp(); } catch (err) { showError(err); } });
 
     function initApp(){
-      // Element refs
       const mainScreen = document.getElementById('mainScreen');
       const initView = document.getElementById('initView');
-      const newListBtn = document.getElementById('newListBtn');
-      const backToMain = document.getElementById('backToMain');
-      const openScannerBtn = document.getElementById('openScannerBtn');
-      const saveReportBtn = document.getElementById('saveReportBtn');
       const itemsList = document.getElementById('itemsList');
       const reportsList = document.getElementById('reportsList');
-
       const scannerModal = document.getElementById('scannerModal');
       const video = document.getElementById('video');
       const hiddenCanvas = document.getElementById('hiddenCanvas');
@@ -233,90 +315,252 @@
       const foundText = document.getElementById('foundText');
       const acceptBtn = document.getElementById('acceptBtn');
       const declineBtn = document.getElementById('declineBtn');
-      const closeScanner = document.getElementById('closeScanner');
-      const scannerMsg = document.getElementById('scannerMsg');
+      const scanBoxOverlay = document.getElementById('scanBoxOverlay');
+      
       const qtyInput = document.getElementById('qtyInput');
       const monthCheckbox = document.getElementById('monthCheckbox');
       const monthQtyInput = document.getElementById('monthQtyInput');
+      const monthUnitSelect = document.getElementById('monthUnitSelect'); // Ny
       const monthInputRow = document.getElementById('monthInputRow');
-      const toggleTorchBtn = document.getElementById('toggleTorchBtn');
-      const captureBtn = document.getElementById('captureBtn');
 
       const reportModalWrap = document.getElementById('reportModalWrap');
       const reportTitle = document.getElementById('reportTitle');
       const reportMeta = document.getElementById('reportMeta');
       const opfyTbody = document.getElementById('opfyTbody');
       const monthTbody = document.getElementById('monthTbody');
-      const closeReportModal = document.getElementById('closeReportModal');
-      const exportReportBtn = document.getElementById('exportReportBtn');
 
-      // state
-      let stream=null, scanning=false, lastFound=null;
-      let items=[];
+      let stream = null, scanning = false, lastFound = null;
+      let items = [];
       const STORAGE_KEY = 'qr_reports_v1';
 
-      // helpers
       function formatDateDMY(date){ const d=String(date.getDate()).padStart(2,'0'); const m=String(date.getMonth()+1).padStart(2,'0'); const y=date.getFullYear(); return `${d}/${m}/${y}`; }
-      function formatDateForFilename(date){ const d=String(date.getDate()).padStart(2,'0'); const m=String(date.getMonth()+1).padStart(2,'0'); const y=date.getFullYear(); return `${d}-${m}-${y}`; }
       function escapeHtml(text){ if(typeof text!=='string') text=String(text); return text.replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
-      function parseQRFields(qrtext){ const fields={varenummer:'',materiale:'',område:'',lager:'',reol:'',hylde:'',antal_raw:'',enhed:''}; if(!qrtext) return fields; const lines=String(qrtext).replace(/\r/g,'').split('\n'); lines.forEach(line=>{ const [kRaw,...vRaw]=line.split(':'); const k=(kRaw||'').trim().toLowerCase(); const v=vRaw.join(':').trim(); if(k==='varenummer') fields.varenummer=v; else if(k==='materiale') fields.materiale=v; else if(k==='område') fields.område=v; else if(k==='lager') fields.lager=v; else if(k==='reol') fields.reol=v; else if(k==='hylde') fields.hylde=v; else if(k==='antal'){ fields.antal_raw=v; const m=v.match(/^\s*([0-9]+(?:[.,][0-9]+)?)(?:\s+(.*))?$/); if(m) fields.enhed=(m[2]||'').trim(); else fields.enhed=v; } }); return fields; }
+      
+      function parseQRFields(qrtext){ 
+        const fields={varenummer:'',materiale:'',område:'',lager:'',reol:'',hylde:'',antal_raw:'',enhed:''}; 
+        if(!qrtext) return fields; 
+        const lines=String(qrtext).replace(/\r/g,'').split('\n'); 
+        lines.forEach(line=>{ 
+            const parts=line.split(':'); if(parts.length<2) return;
+            const k=parts[0].trim().toLowerCase(); 
+            const v=parts.slice(1).join(':').trim(); 
+            if(k==='varenummer') fields.varenummer=v; 
+            else if(k==='materiale') fields.materiale=v; 
+            else if(k==='område') fields.område=v; 
+            else if(k==='lager') fields.lager=v; 
+            else if(k==='reol') fields.reol=v; 
+            else if(k==='hylde') fields.hylde=v; 
+            else if(k==='antal'){ 
+                fields.antal_raw=v; 
+                const m=v.match(/^\s*([0-9]+(?:[.,][0-9]+)?)(?:\s+(.*))?$/); 
+                if(m) fields.enhed=(m[2]||'').trim(); else fields.enhed=v; 
+            } 
+        }); 
+        return fields; 
+      }
       function itemKeyFromRaw(raw){ return raw; }
 
-      // ensure accept/decline always active
-      function enableAcceptDeclineButtons(){ try{ const a=document.getElementById('acceptBtn'); const d=document.getElementById('declineBtn'); if(a){ a.disabled=false; a.removeAttribute && a.removeAttribute('disabled'); } if(d){ d.disabled=false; d.removeAttribute && d.removeAttribute('disabled'); } } catch(e){ console.warn(e); } }
-      enableAcceptDeclineButtons();
-
-      // install observer only once
-      if(foundArea && !foundArea._observerInstalled){
-        try{
-          const obs = new MutationObserver(()=>{ if(foundArea.style.display !== 'none') enableAcceptDeclineButtons(); });
-          obs.observe(foundArea, { attributes:true, attributeFilter:['style'] });
-          foundArea._observerInstalled = true;
-        } catch(e){ console.warn('Could not install observer', e); }
+      function setMonthVisibility(){ 
+        if(monthCheckbox.checked){ monthInputRow.style.display='block'; monthQtyInput.disabled=false; } 
+        else { monthInputRow.style.display='none'; monthQtyInput.disabled=true; monthQtyInput.value=0; } 
       }
-
-      // show/hide month input row based on checkbox
-      function setMonthVisibility(){
-        const row = document.getElementById('monthInputRow');
-        if(!row) return;
-        if(monthCheckbox.checked){ row.style.display='flex'; monthQtyInput.disabled=false; } else { row.style.display='none'; monthQtyInput.disabled=true; monthQtyInput.value=0; }
-      }
-      // initial state
-      setMonthVisibility();
       monthCheckbox.addEventListener('change', setMonthVisibility);
 
-      // Load, render, add/aggregate, populate modal (same as before)...
-      function loadReports(){ reportsList.innerHTML=''; const saved=JSON.parse(localStorage.getItem(STORAGE_KEY)||'[]'); if(!saved.length){ const note=document.createElement('div'); note.className='muted-note'; note.textContent='Ingen gemte rapporter endnu.'; reportsList.appendChild(note); return; } saved.slice().reverse().forEach(rep=>{ const el=document.createElement('div'); el.className='report-item'; const left=document.createElement('div'); left.innerHTML=`<div style="font-weight:600">${escapeHtml(rep.title||'Rapport')}</div><small>${new Date(rep.created).toLocaleString()}</small>`; const right=document.createElement('div'); right.style.display='flex'; right.style.gap='8px'; const viewBtn=document.createElement('button'); viewBtn.className='ghost'; viewBtn.textContent='Åbn'; viewBtn.onclick=()=>openReport(rep.id); const delBtn=document.createElement('button'); delBtn.className='ghost'; delBtn.textContent='Slet'; delBtn.onclick=()=>{ if(confirm('Slet denne rapport?')) deleteReport(rep.id); }; right.appendChild(viewBtn); right.appendChild(delBtn); el.appendChild(left); el.appendChild(right); reportsList.appendChild(el); }); }
-      function deleteReport(id){ let saved=JSON.parse(localStorage.getItem(STORAGE_KEY)||'[]'); saved=saved.filter(r=>r.id!==id); localStorage.setItem(STORAGE_KEY,JSON.stringify(saved)); loadReports(); }
+      function loadReports(){ 
+        reportsList.innerHTML=''; 
+        const saved=JSON.parse(localStorage.getItem(STORAGE_KEY)||'[]'); 
+        if(!saved.length){ reportsList.innerHTML='<div class="muted-note">Ingen gemte rapporter.</div>'; return; } 
+        saved.slice().reverse().forEach(rep=>{ 
+            const el=document.createElement('div'); el.className='report-item'; 
+            el.innerHTML=`<div><div style="font-weight:600">${escapeHtml(rep.title)}</div><small class="muted-note">${new Date(rep.created).toLocaleString()}</small></div><div style="display:flex;gap:8px;"><button class="ghost" onclick="openReport('${rep.id}')">Åbn</button><button class="ghost" style="color:#c00" onclick="deleteReport('${rep.id}')">Slet</button></div>`; 
+            reportsList.appendChild(el); 
+        }); 
+      }
+      
+      window.deleteReport=function(id){ 
+        let saved=JSON.parse(localStorage.getItem(STORAGE_KEY)||'[]'); 
+        saved=saved.filter(r=>r.id!==id); 
+        localStorage.setItem(STORAGE_KEY,JSON.stringify(saved)); 
+        loadReports(); 
+      };
 
-      function renderItems(){ itemsList.innerHTML=''; if(!items.length){ const note=document.createElement('div'); note.className='muted-note'; note.textContent='Ingen poster endnu. Brug kameraet for at scanne QR-koder.'; itemsList.appendChild(note); return; } items.forEach((it, idx)=>{ const title=[it.varenummer,it.materiale].filter(Boolean).join(' — '); const el=document.createElement('div'); el.className='item'; const left=document.createElement('div'); left.style.flex='1'; left.innerHTML=`<div class="txt">${escapeHtml(title)}</div><div class="meta">${new Date(it._when||Date.now()).toLocaleString()}</div><div style="font-size:12px;color:#972;">Område: ${escapeHtml(it.område||'')}</div>`; const qty=document.createElement('div'); qty.className='qty-badge'; const monthDisplay=(it.monthQty&&it.monthQty>0)?`<div class="month-badge">Måneds: ${escapeHtml(String(it.monthQty))}</div>`:''; qty.innerHTML=`${escapeHtml(String(it.qty||0))}<div class="unit-text">${escapeHtml(it.enhed||'')}</div>${monthDisplay}`; const right=document.createElement('div'); right.style.display='flex'; right.style.flexDirection='column'; right.style.gap='8px'; const expand=document.createElement('button'); expand.className='ghost'; expand.textContent='Vis / skjul'; const rem=document.createElement('button'); rem.className='ghost'; rem.textContent='Fjern'; rem.onclick=()=>{ items.splice(idx,1); renderItems(); }; right.appendChild(expand); right.appendChild(rem); const expanded=document.createElement('div'); expanded.className='full-text'; expanded.style.display='none'; expanded.textContent=it.data||''; expand.onclick=()=> expanded.style.display = expanded.style.display==='none' ? 'block' : 'none'; el.appendChild(left); el.appendChild(qty); el.appendChild(right); itemsList.appendChild(el); itemsList.appendChild(expanded); }); }
+      function renderItems(){ 
+        itemsList.innerHTML=''; 
+        if(!items.length){ itemsList.innerHTML='<div class="muted-note" style="padding:20px; text-align:center;">Listen er tom.<br>Tryk på kameraet.</div>'; return; } 
+        items.slice().reverse().forEach((it, idx)=>{ 
+            const realIdx = items.length - 1 - idx;
+            const title=[it.varenummer,it.materiale].filter(Boolean).join(' — '); 
+            const el=document.createElement('div'); el.className='item'; 
+            el.innerHTML=`<div style="flex:1"><div style="font-weight:600">${escapeHtml(title)}</div><div style="font-size:12px;color:#777">Område: ${escapeHtml(it.område||'')}</div></div><div class="qty-badge">${it.qty}${it.monthQty>0?'<br><span style="font-size:9px">M:'+it.monthQty+(it.monthUnit?` ${it.monthUnit}`:'')+'</span>':''}</div><button class="ghost" style="color:#c00" onclick="removeItem(${realIdx})">✕</button>`; 
+            itemsList.appendChild(el); 
+        }); 
+      }
+      window.removeItem=function(idx){ items.splice(idx,1); renderItems(); };
 
-      function addOrAggregateItem(rawData, qtyToAdd=1, monthQtyToAdd=0){ const key=itemKeyFromRaw(rawData); const parsed=parseQRFields(rawData); const existing=items.find(i=>i.key===key); if(existing){ existing.qty=(existing.qty||0)+qtyToAdd; existing.monthQty=(existing.monthQty||0)+(monthQtyToAdd||0); existing._when=Date.now(); if(!existing.enhed && parsed.enhed) existing.enhed=parsed.enhed; } else { items.push({ key, data:rawData, qty:qtyToAdd, monthQty:monthQtyToAdd||0, _when:Date.now(), enhed:parsed.enhed||'', ...parsed }); } }
+      // Ny parameter: monthUnit
+      function addOrAggregateItem(rawData, qtyToAdd, monthQtyToAdd, monthUnit){ 
+        const key=itemKeyFromRaw(rawData); 
+        const existing=items.find(i=>i.key===key); 
+        if(existing){ 
+            existing.qty+=qtyToAdd; 
+            existing.monthQty+=monthQtyToAdd; 
+            if(monthUnit) existing.monthUnit = monthUnit; // Opdater enhed hvis valgt
+            existing._when=Date.now(); 
+        } 
+        else { 
+            const parsed=parseQRFields(rawData); 
+            items.push({ 
+                key, data:rawData, 
+                qty:qtyToAdd, 
+                monthQty:monthQtyToAdd, 
+                monthUnit: monthUnit || '', // Gem enhed
+                _when:Date.now(), ...parsed 
+            }); 
+        } 
+      }
 
-      function populateModalTables(rep){ opfyTbody.innerHTML=''; monthTbody.innerHTML=''; const opfyGroups={}; (rep.items||[]).forEach(it=>{ let area=it.område||''; if(!area && it.data) area=parseQRFields(it.data).område||''; if(!area) area='Uden område'; (opfyGroups[area]||(opfyGroups[area]=[])).push(it); }); let globalIndex=1; Object.keys(opfyGroups).sort().forEach(areaName=>{ const areaTr=document.createElement('tr'); areaTr.className='area-row'; const tdEmpty=document.createElement('td'); tdEmpty.textContent=''; areaTr.appendChild(tdEmpty); const tdArea=document.createElement('td'); tdArea.colSpan=8; tdArea.textContent=areaName; areaTr.appendChild(tdArea); opfyTbody.appendChild(areaTr); opfyGroups[areaName].forEach(it=>{ const parsed=(it.varenummer!==undefined)?it:Object.assign({},parseQRFields(it.data||''),{qty:it.qty||''}); const tr=document.createElement('tr'); const cols=[globalIndex,'', it.varenummer||parsed.varenummer||'', it.materiale||parsed.materiale||'', it.lager||parsed.lager||'', it.reol||parsed.reol||'', it.hylde||parsed.hylde||'', it.qty||'', it.enhed||parsed.enhed||'']; cols.forEach(v=>{ const td=document.createElement('td'); td.textContent=v; tr.appendChild(td); }); opfyTbody.appendChild(tr); globalIndex++; }); }); const monthItems=(rep.items||[]).filter(i=>i.monthQty && i.monthQty>0); if(!monthItems.length){ const tr=document.createElement('tr'); const td=document.createElement('td'); td.colSpan=6; td.className='muted-note'; td.textContent='Ingen poster til månedsoptælling.'; tr.appendChild(td); monthTbody.appendChild(tr); } else { const monthGroups={}; monthItems.forEach(it=>{ let area=it.område||''; if(!area && it.data) area=parseQRFields(it.data).område||''; if(!area) area='Uden område'; (monthGroups[area]||(monthGroups[area]=[])).push(it); }); let idxMonth=1; Object.keys(monthGroups).sort().forEach(areaName=>{ const areaTr=document.createElement('tr'); areaTr.className='area-row'; const tdEmpty=document.createElement('td'); tdEmpty.textContent=''; areaTr.appendChild(tdEmpty); const tdArea=document.createElement('td'); tdArea.colSpan=5; tdArea.textContent=areaName; areaTr.appendChild(tdArea); monthTbody.appendChild(areaTr); monthGroups[areaName].forEach(it=>{ const parsed=(it.varenummer!==undefined)?it:Object.assign({},parseQRFields(it.data||''),{}); const tr=document.createElement('tr'); const cols=[idxMonth,'', it.varenummer||parsed.varenummer||'', it.materiale||parsed.materiale||'', it.monthQty||'', it.enhed||parsed.enhed||'']; cols.forEach(v=>{ const td=document.createElement('td'); td.textContent=v; tr.appendChild(td); }); monthTbody.appendChild(tr); idxMonth++; }); }); } }
-
-      function openReport(id){ const saved=JSON.parse(localStorage.getItem(STORAGE_KEY)||'[]'); const rep=saved.find(r=>r.id===id); if(!rep) return alert('Kunne ikke finde rapport.'); reportTitle.textContent=rep.title||'Rapport'; reportMeta.textContent='Oprettet: '+new Date(rep.created).toLocaleDateString()+' — Poster: '+(rep.items?rep.items.length:0); populateModalTables(rep); reportModalWrap.style.display='flex'; reportModalWrap.dataset.currentReportId=id; }
+      function openReport(id){ 
+        const saved=JSON.parse(localStorage.getItem(STORAGE_KEY)||'[]'); 
+        const rep=saved.find(r=>r.id===id); if(!rep) return; 
+        reportTitle.textContent=rep.title; reportMeta.textContent=new Date(rep.created).toLocaleString();
+        
+        const t1=document.getElementById('opfyTbody'); t1.innerHTML='';
+        const t2=document.getElementById('monthTbody'); t2.innerHTML='';
+        
+        rep.items.forEach((it,idx)=>{
+           const row=`<tr><td>${idx+1}</td><td>${it.område||''}</td><td>${it.varenummer||''}</td><td>${it.materiale||''}</td><td>${it.lager||''}</td><td>${it.reol||''}</td><td>${it.hylde||''}</td><td>${it.qty}</td><td>${it.enhed||''}</td></tr>`;
+           t1.insertAdjacentHTML('beforeend',row);
+           if(it.monthQty>0){
+              // Brug monthUnit hvis den findes, ellers enhed fra QR
+              const u = it.monthUnit || it.enhed || '';
+              const row2=`<tr><td>${idx+1}</td><td>${it.område||''}</td><td>${it.varenummer||''}</td><td>${it.materiale||''}</td><td>${it.monthQty}</td><td>${u}</td></tr>`;
+              t2.insertAdjacentHTML('beforeend',row2);
+           }
+        });
+        reportModalWrap.style.display='flex'; 
+      }
       window.openReport=openReport;
-      closeReportModal.addEventListener('click', ()=> reportModalWrap.style.display='none');
+      document.getElementById('closeReportModal').addEventListener('click', ()=> reportModalWrap.style.display='none');
 
-      // simplified: provide basic bindings so buttons work; you can reinstate full camera/export later
+      // --- KAMERA LOOP ---
+      function handleFound(data) {
+        if (!data) return;
+        scanning = false; lastFound = data;
+        
+        if(navigator.vibrate) try{navigator.vibrate(200);}catch(e){}
+        
+        if(scanBoxOverlay) scanBoxOverlay.style.display='none';
+        
+        // VIS FULD SIDE
+        if(foundArea) {
+            foundArea.style.display='flex'; 
+            if(foundText) foundText.textContent=data;
+            if(qtyInput) qtyInput.value=1;
+            // Reset måned felter
+            if(monthCheckbox) monthCheckbox.checked = false;
+            setMonthVisibility();
+        }
+      }
+
+      function tick() {
+        if (!scanning) return;
+        if (video.readyState === video.HAVE_ENOUGH_DATA) {
+          hiddenCanvas.height = video.videoHeight;
+          hiddenCanvas.width = video.videoWidth;
+          const ctx = hiddenCanvas.getContext("2d");
+          ctx.drawImage(video, 0, 0, hiddenCanvas.width, hiddenCanvas.height);
+          
+          const imageData = ctx.getImageData(0, 0, hiddenCanvas.width, hiddenCanvas.height);
+          const code = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: "dontInvert" });
+
+          if (code && code.data && code.data.trim()) {
+            handleFound(code.data);
+            return;
+          }
+        }
+        requestAnimationFrame(tick);
+      }
+
+      async function startCameraAndScan(){
+        try {
+          const constraints = { 
+              video: { 
+                  facingMode: 'environment',
+                  width: { ideal: 1280 },
+                  height: { ideal: 720 } 
+              }, 
+              audio:false 
+          };
+          
+          if(window._currentStream){ window._currentStream.getTracks().forEach(t=>t.stop()); window._currentStream=null; }
+          
+          const _stream = await navigator.mediaDevices.getUserMedia(constraints);
+          window._currentStream = _stream;
+          video.srcObject = _stream;
+          
+          await video.play();
+          
+          if(scanBoxOverlay) scanBoxOverlay.style.display='block';
+          if(foundArea) foundArea.style.display='none';
+          
+          scanning = true;
+          requestAnimationFrame(tick);
+          
+        } catch(err){ 
+          console.error(err); 
+          showError('Kunne ikke starte kamera: ' + err.name); 
+          scannerModal.style.display='none'; 
+        }
+      }
+
+      function stopCamera(){ 
+        scanning=false; 
+        if(window._currentStream){ window._currentStream.getTracks().forEach(t=>t.stop()); window._currentStream=null; } 
+        try{ video.pause(); video.srcObject=null; } catch(e){} 
+      }
+
+      // Bindings
       document.getElementById('newListBtn').addEventListener('click', ()=> { items=[]; renderItems(); mainScreen.style.display='none'; initView.style.display='block'; });
       document.getElementById('backToMain').addEventListener('click', ()=> { initView.style.display='none'; mainScreen.style.display='block'; });
-      document.getElementById('openScannerBtn').addEventListener('click', ()=> { scannerModal.style.display='flex'; });
-      document.getElementById('closeScanner').addEventListener('click', ()=> { scannerModal.style.display='none'; });
+      
+      document.getElementById('openScannerBtn').addEventListener('click', ()=>{ 
+        scannerModal.style.display='flex'; foundArea.style.display='none'; 
+        qtyInput.value=1; monthCheckbox.checked=false; setMonthVisibility(); 
+        startCameraAndScan(); 
+      });
+      document.getElementById('closeScanner').addEventListener('click', ()=>{ stopCamera(); scannerModal.style.display='none'; });
 
-      // keep accept/decline active (simple placeholder actions)
-      document.getElementById('acceptBtn').addEventListener('click', ()=> { const q = parseInt(document.getElementById('qtyInput').value,10) || 0; const m = document.getElementById('monthCheckbox').checked ? (parseInt(document.getElementById('monthQtyInput').value,10)||0) : 0; if(lastFound){ addOrAggregateItem(lastFound, q, m); renderItems(); } foundArea.style.display='none'; scannerModal.style.display='none'; });
-      document.getElementById('declineBtn').addEventListener('click', ()=> { foundArea.style.display='none'; scannerModal.style.display='none'; });
+      document.getElementById('acceptBtn').addEventListener('click', ()=>{ 
+        if(!lastFound) return;
+        let q=parseInt(qtyInput.value,10)||0; 
+        let m=monthCheckbox.checked ? (parseInt(monthQtyInput.value,10)||0) : 0;
+        // Hent valgt enhed hvis månedsrapport er valgt
+        let u = monthCheckbox.checked ? monthUnitSelect.value : '';
 
-      // show/hide month input row logic also for inline click
-      const monthRow = document.getElementById('monthInputRow');
-      if(monthRow) monthRow.style.display='none';
-      monthCheckbox.addEventListener('change', ()=>{ if(monthCheckbox.checked){ monthRow.style.display='flex'; monthQtyInput.disabled=false; } else { monthRow.style.display='none'; monthQtyInput.disabled=true; monthQtyInput.value=0; } });
+        addOrAggregateItem(lastFound, q, m, u); 
+        renderItems(); 
+        
+        if(foundArea) foundArea.style.display='none';
+        if(scanBoxOverlay) scanBoxOverlay.style.display='block';
+        lastFound=null; scanning=true; requestAnimationFrame(tick);
+      });
 
-      // initial load
+      document.getElementById('declineBtn').addEventListener('click', ()=>{ 
+        if(foundArea) foundArea.style.display='none';
+        if(scanBoxOverlay) scanBoxOverlay.style.display='block';
+        lastFound=null; scanning=true; requestAnimationFrame(tick);
+      });
+
+      document.getElementById('saveReportBtn').addEventListener('click', ()=>{ 
+        if(!items.length && !confirm('Gem tom liste?')) return;
+        const saved=JSON.parse(localStorage.getItem(STORAGE_KEY)||'[]'); 
+        saved.push({ id:'r_'+Date.now(), title:'Liste '+formatDateDMY(new Date()), created:Date.now(), items:items }); 
+        localStorage.setItem(STORAGE_KEY,JSON.stringify(saved)); 
+        alert('Gemt'); items=[]; renderItems(); initView.style.display='none'; mainScreen.style.display='block'; loadReports(); 
+      });
+
       loadReports();
-    } // end initApp
+    }
   </script>
 </body>
 </html>
