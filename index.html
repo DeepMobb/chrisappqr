@@ -225,7 +225,7 @@
                <div style="display:flex; gap:16px;">
                    <div style="flex:1;">
                        <label style="font-size:14px; font-weight:700; display:block; margin-bottom:8px; color:#333;">Antal til måned</label>
-                       <input id="monthQtyInput" class="num-input-month" type="number" min="0" step="1" value="0" inputmode="numeric" />
+                       <input id="monthQtyInput" class="num-input-month" type="number" min="0" step="1" value="" placeholder="0" inputmode="numeric" />
                    </div>
                    <div style="flex:1;">
                        <label style="font-size:14px; font-weight:700; display:block; margin-bottom:8px; color:#333;">Enhed</label>
@@ -393,7 +393,7 @@
 
       function setMonthVisibility(){ 
         if(monthCheckbox.checked){ monthInputRow.style.display='block'; monthQtyInput.disabled=false; } 
-        else { monthInputRow.style.display='none'; monthQtyInput.disabled=true; monthQtyInput.value=0; } 
+        else { monthInputRow.style.display='none'; monthQtyInput.disabled=true; monthQtyInput.value=''; } // Reset til blank
       }
       monthCheckbox.addEventListener('change', setMonthVisibility);
 
@@ -467,41 +467,35 @@
            }
         });
         reportModalWrap.style.display='flex'; 
-        // Save ID for export
         reportModalWrap.dataset.currentId = id;
       }
       window.openReport=openReport;
       document.getElementById('closeReportModal').addEventListener('click', ()=> reportModalWrap.style.display='none');
 
-      // --- EXPORT FUNCTIONALITY (SHARE SHEET) ---
+      // --- EXPORT FUNCTIONALITY ---
       if(exportReportBtn){
         exportReportBtn.addEventListener('click', async () => {
              const { jsPDF } = window.jspdf;
              const doc = new jsPDF();
              
-             // Titel
              doc.setFontSize(18);
              doc.text(reportTitle.textContent, 14, 15);
              doc.setFontSize(10);
              doc.text(reportMeta.textContent, 14, 22);
              
-             // Opfyldningsliste
              doc.setFontSize(14);
              doc.text("Opfyldningsliste", 14, 32);
              doc.autoTable({ html: '#opfyTable', startY: 35, theme: 'grid' });
              
-             // Månedsoptælling (kun hvis data)
              if(document.getElementById('monthTable').rows.length > 1) {
                 let finalY = doc.lastAutoTable.finalY || 40;
                 doc.text("Månedsoptælling", 14, finalY + 10);
                 doc.autoTable({ html: '#monthTable', startY: finalY + 15, theme: 'grid' });
              }
 
-             // Generate Blob
              const pdfBlob = doc.output('blob');
              const file = new File([pdfBlob], "Rapport.pdf", { type: "application/pdf" });
 
-             // Try Native Share
              if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
                 try {
                     await navigator.share({
@@ -513,14 +507,13 @@
                     console.log('Deling annulleret', err);
                 }
              } else {
-                // Fallback: Download
                 doc.save('Rapport.pdf');
                 alert('PDF downloadet. Åbn din mail og vedhæft filen manuelt.');
              }
         });
       }
 
-      // --- KAMERA LOOP ---
+      // --- KAMERA LOGIK ---
       function handleFound(data) {
         if (!data) return;
         scanning = false; lastFound = data;
@@ -531,7 +524,22 @@
         
         if(foundArea) {
             foundArea.style.display='flex'; 
-            if(foundText) foundText.textContent=data;
+            
+            if(foundText) {
+                const f = parseQRFields(data);
+                let displayStr = "";
+                if(f.område) displayStr += `Område: ${f.område}\n`;
+                if(f.varenummer) displayStr += `Varenummer: ${f.varenummer}\n`;
+                if(f.materiale) displayStr += `Materiale: ${f.materiale}\n`;
+                if(f.lager) displayStr += `Lager: ${f.lager}\n`;
+                if(f.reol) displayStr += `Reol: ${f.reol}\n`;
+                if(f.hylde) displayStr += `Hylde: ${f.hylde}\n`;
+                if(f.antal_raw) displayStr += `Antal: ${f.antal_raw}`;
+                else if(f.enhed) displayStr += `Enhed: ${f.enhed}`;
+                
+                foundText.innerText = displayStr.trim();
+            }
+
             if(qtyInput) qtyInput.value=1;
             if(monthCheckbox) monthCheckbox.checked = false;
             setMonthVisibility();
@@ -559,13 +567,12 @@
 
       async function startCameraAndScan(){
         try {
-          // AUTOFOKUS: "continuous"
           const constraints = { 
               video: { 
                   facingMode: 'environment',
-                  width: { ideal: 1280 },
-                  height: { ideal: 720 },
-                  advanced: [{ focusMode: 'continuous' }] // <-- HER ER ÆNDRINGEN
+                  width: { ideal: 1920 },
+                  height: { ideal: 1080 },
+                  advanced: [{ focusMode: 'continuous' }] 
               }, 
               audio:false 
           };
@@ -577,10 +584,27 @@
           video.srcObject = _stream;
           
           await video.play();
+
+          const track = _stream.getVideoTracks()[0];
+          const capabilities = track.getCapabilities();
+
+          if (capabilities.focusMode && capabilities.focusMode.includes('continuous')) {
+             try { await track.applyConstraints({ advanced: [{ focusMode: 'continuous' }] }); } catch(e) {}
+          }
+
+          if (capabilities.zoom) {
+             try {
+                const zoomLevel = Math.min(capabilities.zoom.max, 2.0); 
+                await track.applyConstraints({ advanced: [{ zoom: zoomLevel }] });
+             } catch(e) {}
+          }
           
           if(scanBoxOverlay) scanBoxOverlay.style.display='block';
           if(foundArea) foundArea.style.display='none';
           
+          // RESET MONTH INPUT VALUE
+          if(monthQtyInput) monthQtyInput.value = '';
+
           scanning = true;
           requestAnimationFrame(tick);
           
