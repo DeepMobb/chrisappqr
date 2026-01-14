@@ -211,8 +211,8 @@
             <div id="reportMeta" class="muted-note" style="font-size:13px;margin-top:4px;"></div>
           </div>
           <div style="display:flex;gap:8px;">
-            <button id="exportExcelBtn" class="ghost excel-icon">Excel</button>
-            <button id="exportReportBtn" class="ghost pdf-icon">PDF</button>
+            <button id="exportExcelBtn" class="ghost excel-icon">Excel (Mail)</button>
+            <button id="exportReportBtn" class="ghost pdf-icon">PDF (Mail)</button>
             <button id="closeReportModal" class="ghost">Luk</button>
           </div>
         </div>
@@ -332,17 +332,14 @@
         saved.slice().reverse().forEach(rep=>{ 
             const el=document.createElement('div'); el.className='report-item'; 
             
-            // Knapper til forside
             const btnWrap = document.createElement('div');
             btnWrap.style.cssText = "display:flex;gap:8px;";
 
-            // Excel knap
             const xlsBtn = document.createElement('button');
             xlsBtn.className = 'ghost excel-icon';
             xlsBtn.textContent = 'Excel';
             xlsBtn.onclick = () => generateAndShareExcel(rep);
 
-            // PDF knap
             const pdfBtn = document.createElement('button');
             pdfBtn.className = 'ghost pdf-icon';
             pdfBtn.textContent = 'PDF';
@@ -437,7 +434,7 @@
       window.openReport=openReport;
       document.getElementById('closeReportModal').addEventListener('click', ()=> reportModalWrap.style.display='none');
 
-      // --- EXCEL GENERATOR (Med Sikkerhedsnet/Fallback) ---
+      // --- EXCEL GENERATOR (Med Sikkerhedsnet) ---
       async function generateAndShareExcel(report) {
          if(!report) return;
          try {
@@ -466,24 +463,21 @@
              const blob = new Blob([wbout], { type: "application/octet-stream" });
              const file = new File([blob], "Rapport.xlsx", { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
 
-             // Prøv deling (hvis mobil/understøttet)
              if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
                  try {
                     await navigator.share({ files: [file], title: report.title, text: 'Excel rapport' });
                  } catch (err) {
-                    // Hvis deling fejler/annulleres, eller "Permission denied", download i stedet!
-                    console.warn("Share failed, downloading instead", err);
-                    downloadFile(blob, "Rapport.xlsx");
+                    if (err.name !== 'AbortError') { 
+                       downloadFile(blob, "Rapport.xlsx"); // Fallback ved fejl
+                    }
                  }
              } else {
-                 // Fallback til download (PC)
-                 downloadFile(blob, "Rapport.xlsx");
-                 alert('Excel fil downloadet.');
+                 downloadFile(blob, "Rapport.xlsx"); // Fallback ved manglende support
              }
          } catch(e) { console.error(e); alert('Fejl ved Excel generering'); }
       }
 
-      // --- PDF GENERATOR (Med Sikkerhedsnet/Fallback) ---
+      // --- PDF GENERATOR (Med Sikkerhedsnet) ---
       async function generateAndSharePDF(report) {
          if(!report) return;
          try {
@@ -515,12 +509,12 @@
                 try { 
                     await navigator.share({ files: [file], title: report.title, text: 'PDF rapport' }); 
                 } catch (err) {
-                    console.warn("Share failed, downloading instead", err);
-                    doc.save('Rapport.pdf');
+                    if (err.name !== 'AbortError') { 
+                       doc.save('Rapport.pdf'); // Fallback ved fejl
+                    }
                 }
              } else {
-                doc.save('Rapport.pdf'); 
-                alert('PDF downloadet.');
+                doc.save('Rapport.pdf'); // Fallback ved manglende support
              }
          } catch(e) { console.error(e); }
       }
