@@ -211,8 +211,8 @@
             <div id="reportMeta" class="muted-note" style="font-size:13px;margin-top:4px;"></div>
           </div>
           <div style="display:flex;gap:8px;">
-            <button id="exportExcelBtn" class="ghost excel-icon">Send Excel</button>
-            <button id="exportReportBtn" class="ghost pdf-icon">Send PDF</button>
+            <button id="exportExcelBtn" class="ghost excel-icon">Excel (Mail)</button>
+            <button id="exportReportBtn" class="ghost pdf-icon">PDF (Mail)</button>
             <button id="closeReportModal" class="ghost">Luk</button>
           </div>
         </div>
@@ -332,6 +332,7 @@
         saved.slice().reverse().forEach(rep=>{ 
             const el=document.createElement('div'); el.className='report-item'; 
             
+            // Knapper til forside
             const btnWrap = document.createElement('div');
             btnWrap.style.cssText = "display:flex;gap:8px;";
 
@@ -468,9 +469,9 @@
                  XLSX.utils.book_append_sheet(wb, ws2, "Månedsoptælling");
              }
 
-             // Generer fil
              const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
-             const blob = new Blob([wbout], { type: "application/octet-stream" });
+             const blob = new Blob([wbout], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+             // VIGTIGT: Opretter en rigtig fil til deling
              const file = new File([blob], "Rapport.xlsx", { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
 
              // Prøv at dele
@@ -478,15 +479,14 @@
                  try {
                     await navigator.share({ files: [file], title: report.title, text: 'Her er Excel rapporten.' });
                  } catch (err) {
-                    // Hvis bruger annullerer eller det fejler, download!
                     if (err.name !== 'AbortError') { 
                        alert('Deling mislykkedes - downloader filen i stedet.');
                        downloadFile(blob, "Rapport.xlsx"); 
                     }
                  }
              } else {
-                 // Hvis browser ikke kan dele, download
-                 alert('Din browser tillader ikke automatisk deling. Filen er downloadet. Åbn din mail og vedhæft filen manuelt.');
+                 // Hvis browser ikke kan dele
+                 alert('Din enhed understøtter ikke direkte deling af Excel-filer. Filen er downloadet. Åbn din mail-app og vedhæft filen fra Downloads.');
                  downloadFile(blob, "Rapport.xlsx");
              }
          } catch(e) { console.error(e); alert('Fejl ved Excel generering'); }
@@ -520,7 +520,6 @@
              const pdfBlob = doc.output('blob');
              const file = new File([pdfBlob], "Rapport.pdf", { type: "application/pdf" });
 
-             // Prøv at dele
              if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
                 try { 
                     await navigator.share({ files: [file], title: report.title, text: 'Her er PDF rapporten.' }); 
@@ -531,7 +530,7 @@
                     }
                 }
              } else {
-                alert('Din browser tillader ikke automatisk deling. Filen er downloadet. Åbn din mail og vedhæft filen manuelt.');
+                alert('Din enhed understøtter ikke direkte deling af PDF-filer. Filen er downloadet. Åbn din mail-app og vedhæft filen fra Downloads.');
                 doc.save('Rapport.pdf');
              }
          } catch(e) { console.error(e); }
