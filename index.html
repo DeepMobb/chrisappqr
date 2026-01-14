@@ -211,8 +211,8 @@
             <div id="reportMeta" class="muted-note" style="font-size:13px;margin-top:4px;"></div>
           </div>
           <div style="display:flex;gap:8px;">
-            <button id="exportExcelBtn" class="ghost excel-icon">Excel (Mail)</button>
-            <button id="exportReportBtn" class="ghost pdf-icon">PDF (Mail)</button>
+            <button id="exportExcelBtn" class="ghost excel-icon">Send Excel</button>
+            <button id="exportReportBtn" class="ghost pdf-icon">Send PDF</button>
             <button id="closeReportModal" class="ghost">Luk</button>
           </div>
         </div>
@@ -434,7 +434,16 @@
       window.openReport=openReport;
       document.getElementById('closeReportModal').addEventListener('click', ()=> reportModalWrap.style.display='none');
 
-      // --- EXCEL GENERATOR (Med Sikkerhedsnet) ---
+      // --- Helper: Download Fil (hvis deling fejler) ---
+      function downloadFile(blob, filename) {
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url; a.download = filename;
+          document.body.appendChild(a); a.click();
+          document.body.removeChild(a);
+      }
+
+      // --- EXCEL GENERATOR (DEL først, ellers DOWNLOAD) ---
       async function generateAndShareExcel(report) {
          if(!report) return;
          try {
@@ -459,25 +468,31 @@
                  XLSX.utils.book_append_sheet(wb, ws2, "Månedsoptælling");
              }
 
+             // Generer fil
              const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
              const blob = new Blob([wbout], { type: "application/octet-stream" });
              const file = new File([blob], "Rapport.xlsx", { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
 
+             // Prøv at dele
              if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
                  try {
-                    await navigator.share({ files: [file], title: report.title, text: 'Excel rapport' });
+                    await navigator.share({ files: [file], title: report.title, text: 'Her er Excel rapporten.' });
                  } catch (err) {
+                    // Hvis bruger annullerer eller det fejler, download!
                     if (err.name !== 'AbortError') { 
-                       downloadFile(blob, "Rapport.xlsx"); // Fallback ved fejl
+                       alert('Deling mislykkedes - downloader filen i stedet.');
+                       downloadFile(blob, "Rapport.xlsx"); 
                     }
                  }
              } else {
-                 downloadFile(blob, "Rapport.xlsx"); // Fallback ved manglende support
+                 // Hvis browser ikke kan dele, download
+                 alert('Din browser tillader ikke automatisk deling. Filen er downloadet. Åbn din mail og vedhæft filen manuelt.');
+                 downloadFile(blob, "Rapport.xlsx");
              }
          } catch(e) { console.error(e); alert('Fejl ved Excel generering'); }
       }
 
-      // --- PDF GENERATOR (Med Sikkerhedsnet) ---
+      // --- PDF GENERATOR (DEL først, ellers DOWNLOAD) ---
       async function generateAndSharePDF(report) {
          if(!report) return;
          try {
@@ -505,30 +520,23 @@
              const pdfBlob = doc.output('blob');
              const file = new File([pdfBlob], "Rapport.pdf", { type: "application/pdf" });
 
+             // Prøv at dele
              if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
                 try { 
-                    await navigator.share({ files: [file], title: report.title, text: 'PDF rapport' }); 
+                    await navigator.share({ files: [file], title: report.title, text: 'Her er PDF rapporten.' }); 
                 } catch (err) {
                     if (err.name !== 'AbortError') { 
-                       doc.save('Rapport.pdf'); // Fallback ved fejl
+                       alert('Deling mislykkedes - downloader filen i stedet.');
+                       doc.save('Rapport.pdf');
                     }
                 }
              } else {
-                doc.save('Rapport.pdf'); // Fallback ved manglende support
+                alert('Din browser tillader ikke automatisk deling. Filen er downloadet. Åbn din mail og vedhæft filen manuelt.');
+                doc.save('Rapport.pdf');
              }
          } catch(e) { console.error(e); }
       }
 
-      // Helper til download
-      function downloadFile(blob, filename) {
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement("a");
-          a.href = url; a.download = filename;
-          document.body.appendChild(a); a.click();
-          document.body.removeChild(a);
-      }
-
-      // Klik på knapper inde i modalen
       if(exportReportBtn){
         exportReportBtn.addEventListener('click', () => {
              const repString = reportModalWrap.dataset.currentReport;
@@ -542,7 +550,6 @@
         });
       }
 
-      // --- KAMERA LOGIK ---
       function handleFound(data) {
         if (!data) return;
         scanning = false; lastFound = data;
