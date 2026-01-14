@@ -48,7 +48,7 @@
     
     /* Ikon farver */
     .ghost.pdf-icon { color: #D32F2F; font-weight: 700; }
-    .ghost.excel-icon { color: #1D6F42; font-weight: 700; } /* Excel Grøn */
+    .ghost.excel-icon { color: #1D6F42; font-weight: 700; }
     
     .fab { width:64px; height:64px; border-radius:20px; background:var(--dark); color:var(--white); font-size: 24px; box-shadow: 0 6px 16px rgba(0,0,0,0.2); }
 
@@ -69,78 +69,38 @@
     
     .scanner{width:100%; height:100%; display:flex; flex-direction:column; position:relative;}
     
-    .video-wrap{
-      width: 100%;
-      height: 100%;
-      background:#000; 
-      position: relative; 
-      overflow: hidden;
-    }
-    
-    video {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
+    .video-wrap{ width: 100%; height: 100%; background:#000; position: relative; overflow: hidden; }
+    video { width: 100%; height: 100%; object-fit: cover; }
     
     .scan-box {
-      position: absolute;
-      width: 70%;
-      max-width: 300px;
-      aspect-ratio: 1/1;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      border-radius: 20px;
-      border: 2px solid rgba(255,255,255,0.8);
-      box-shadow: 0 0 0 100vmax rgba(0,0,0,0.5);
-      z-index: 10;
-      pointer-events: none;
+      position: absolute; width: 70%; max-width: 300px; aspect-ratio: 1/1;
+      top: 50%; left: 50%; transform: translate(-50%, -50%);
+      border-radius: 20px; border: 2px solid rgba(255,255,255,0.8);
+      box-shadow: 0 0 0 100vmax rgba(0,0,0,0.5); z-index: 10; pointer-events: none;
     }
-
     .scan-line{position:absolute;left:10%;right:10%;height:2px;background:#ff0000;box-shadow:0 0 4px red; animation:scanmove 2s ease-in-out infinite;}
     @keyframes scanmove{0%{top:10%}50%{top:90%}100%{top:10%}}
 
     /* --- FULD SKÆRM RESULTAT --- */
     #foundArea {
-        position: fixed; 
-        top: 0; left: 0; width: 100%; height: 100%;
-        z-index: 2000;
-        background: #ffffff;
-        display: none;
-        flex-direction: column;
-        overflow-y: auto; 
-        -webkit-overflow-scrolling: touch; 
-        padding: 24px;
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 2000;
+        background: #ffffff; display: none; flex-direction: column;
+        overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 24px;
     }
-
-    .found-content { 
-        max-width: 600px; 
-        margin: 0 auto; 
-        width: 100%; 
-        padding-bottom: 100px; 
-    }
-
+    .found-content { max-width: 600px; margin: 0 auto; width: 100%; padding-bottom: 100px; }
     .controls{display:grid; grid-template-columns: 1fr 1fr; gap:16px; margin-top:30px; padding-top:20px; border-top:1px solid #eee;}
     
     .num-input, .num-input-month, .unit-select {
         width:100%; padding:14px; border-radius:12px; border:1px solid #ddd; 
-        font-size: 20px; text-align: center; font-weight:700; background:#f9f9f9; color: #333;
-        height: 54px; 
+        font-size: 20px; text-align: center; font-weight:700; background:#f9f9f9; color: #333; height: 54px; 
     }
-    
     .unit-select {
-        text-align-last: center; 
-        appearance: none;
+        text-align-last: center; appearance: none;
         background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23333%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E");
-        background-repeat: no-repeat;
-        background-position: right 12px top 50%;
-        background-size: 12px auto;
+        background-repeat: no-repeat; background-position: right 12px top 50%; background-size: 12px auto;
     }
 
     .report-modal{width:95%; max-width:1000px; background:var(--card); border-radius:12px; padding:14px; max-height:90vh; overflow:auto;}
-    
-    /* Tabel Design */
     table.rtable{width:100%;border-collapse:collapse;margin-top:8px;}
     table.rtable th, table.rtable td{padding:10px;border-bottom:1px solid rgba(0,0,0,0.06);text-align:left;font-size:13px;vertical-align:middle;}
     table.rtable th{background:#e0e0e0; font-weight:700; color:var(--dark); border-bottom: 2px solid #ccc;}
@@ -325,7 +285,7 @@
       const opfyTbody = document.getElementById('opfyTbody');
       const monthTbody = document.getElementById('monthTbody');
       const exportReportBtn = document.getElementById('exportReportBtn');
-      const exportExcelBtn = document.getElementById('exportExcelBtn'); // Ny Excel knap
+      const exportExcelBtn = document.getElementById('exportExcelBtn');
 
       let stream = null, scanning = false, lastFound = null;
       let items = [];
@@ -477,90 +437,101 @@
       window.openReport=openReport;
       document.getElementById('closeReportModal').addEventListener('click', ()=> reportModalWrap.style.display='none');
 
-      // --- EXCEL GENERATOR (SheetJS) ---
+      // --- EXCEL GENERATOR (Med Sikkerhedsnet/Fallback) ---
       async function generateAndShareExcel(report) {
          if(!report) return;
          try {
-             // Opret workbook
              const wb = XLSX.utils.book_new();
              
-             // 1. Opfyldningsliste
+             // Opfyldningsliste
              const opfyData = [['#', 'Område', 'Varenummer', 'Materiale', 'Lager/område', 'Plads', 'Antal', 'Enhed']];
              report.items.forEach((it, idx) => {
-                 opfyData.push([
-                     idx + 1, it.område||'', it.varenummer||'', it.materiale||'', it.lager||'', it.plads||'', it.qty, it.enhed||''
-                 ]);
+                 opfyData.push([idx + 1, it.område||'', it.varenummer||'', it.materiale||'', it.lager||'', it.plads||'', it.qty, it.enhed||'']);
              });
              const ws1 = XLSX.utils.aoa_to_sheet(opfyData);
              XLSX.utils.book_append_sheet(wb, ws1, "Opfyldning");
 
-             // 2. Månedsoptælling
+             // Månedsoptælling
              const monthItems = report.items.filter(i => i.inMonthReport);
              if(monthItems.length > 0){
                  const monthData = [['#', 'Område', 'Varenummer', 'Materiale', 'Månedsantal', 'Enhed']];
                  monthItems.forEach((it, idx) => {
-                     monthData.push([
-                         idx + 1, it.område||'', it.varenummer||'', it.materiale||'', it.monthQty, it.monthUnit||it.enhed||''
-                     ]);
+                     monthData.push([idx + 1, it.område||'', it.varenummer||'', it.materiale||'', it.monthQty, it.monthUnit||it.enhed||'']);
                  });
                  const ws2 = XLSX.utils.aoa_to_sheet(monthData);
                  XLSX.utils.book_append_sheet(wb, ws2, "Månedsoptælling");
              }
 
-             // Generer fil
              const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
              const blob = new Blob([wbout], { type: "application/octet-stream" });
              const file = new File([blob], "Rapport.xlsx", { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
 
-             // Del eller download
+             // Prøv deling (hvis mobil/understøttet)
              if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
-                 await navigator.share({ files: [file], title: report.title, text: 'Excel rapport' });
+                 try {
+                    await navigator.share({ files: [file], title: report.title, text: 'Excel rapport' });
+                 } catch (err) {
+                    // Hvis deling fejler/annulleres, eller "Permission denied", download i stedet!
+                    console.warn("Share failed, downloading instead", err);
+                    downloadFile(blob, "Rapport.xlsx");
+                 }
              } else {
-                 // Fallback download
-                 const url = URL.createObjectURL(blob);
-                 const a = document.createElement("a");
-                 a.href = url; a.download = "Rapport.xlsx";
-                 document.body.appendChild(a); a.click();
-                 document.body.removeChild(a);
+                 // Fallback til download (PC)
+                 downloadFile(blob, "Rapport.xlsx");
                  alert('Excel fil downloadet.');
              }
          } catch(e) { console.error(e); alert('Fejl ved Excel generering'); }
       }
 
-      // --- PDF GENERATOR ---
+      // --- PDF GENERATOR (Med Sikkerhedsnet/Fallback) ---
       async function generateAndSharePDF(report) {
          if(!report) return;
-         const { jsPDF } = window.jspdf;
-         const doc = new jsPDF();
-         
-         doc.setFontSize(18); doc.text(report.title, 14, 15);
-         doc.setFontSize(10); doc.text('Oprettet: ' + new Date(report.created).toLocaleString(), 14, 22);
-         
-         // Opfyld
-         const cols1 = ['#', 'Område', 'Varenummer', 'Materiale', 'Lager/område', 'Plads', 'Antal', 'Enhed'];
-         const rows1 = report.items.map((it, idx) => [ idx+1, it.område||'', it.varenummer||'', it.materiale||'', it.lager||'', it.plads||'', it.qty, it.enhed||'' ]);
-         
-         doc.setFontSize(14); doc.text("Opfyldningsliste", 14, 32);
-         doc.autoTable({ head: [cols1], body: rows1, startY: 35, theme: 'grid' });
-         
-         // Måned
-         const monthItems = report.items.filter(i => i.inMonthReport);
-         if(monthItems.length > 0) {
-            let finalY = doc.lastAutoTable.finalY || 40;
-            doc.text("Månedsoptælling", 14, finalY + 10);
-            const cols2 = ['#', 'Område', 'Varenummer', 'Materiale', 'Månedsantal', 'Enhed'];
-            const rows2 = monthItems.map((it, idx) => [ idx+1, it.område||'', it.varenummer||'', it.materiale||'', it.monthQty, it.monthUnit||it.enhed||'' ]);
-            doc.autoTable({ head: [cols2], body: rows2, startY: finalY + 15, theme: 'grid' });
-         }
+         try {
+             const { jsPDF } = window.jspdf;
+             const doc = new jsPDF();
+             
+             doc.setFontSize(18); doc.text(report.title, 14, 15);
+             doc.setFontSize(10); doc.text('Oprettet: ' + new Date(report.created).toLocaleString(), 14, 22);
+             
+             const cols1 = ['#', 'Område', 'Varenummer', 'Materiale', 'Lager/område', 'Plads', 'Antal', 'Enhed'];
+             const rows1 = report.items.map((it, idx) => [ idx+1, it.område||'', it.varenummer||'', it.materiale||'', it.lager||'', it.plads||'', it.qty, it.enhed||'' ]);
+             
+             doc.setFontSize(14); doc.text("Opfyldningsliste", 14, 32);
+             doc.autoTable({ head: [cols1], body: rows1, startY: 35, theme: 'grid' });
+             
+             const monthItems = report.items.filter(i => i.inMonthReport);
+             if(monthItems.length > 0) {
+                let finalY = doc.lastAutoTable.finalY || 40;
+                doc.text("Månedsoptælling", 14, finalY + 10);
+                const cols2 = ['#', 'Område', 'Varenummer', 'Materiale', 'Månedsantal', 'Enhed'];
+                const rows2 = monthItems.map((it, idx) => [ idx+1, it.område||'', it.varenummer||'', it.materiale||'', it.monthQty, it.monthUnit||it.enhed||'' ]);
+                doc.autoTable({ head: [cols2], body: rows2, startY: finalY + 15, theme: 'grid' });
+             }
 
-         const pdfBlob = doc.output('blob');
-         const file = new File([pdfBlob], "Rapport.pdf", { type: "application/pdf" });
+             const pdfBlob = doc.output('blob');
+             const file = new File([pdfBlob], "Rapport.pdf", { type: "application/pdf" });
 
-         if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
-            try { await navigator.share({ files: [file], title: report.title, text: 'PDF rapport' }); } catch (err) {}
-         } else {
-            doc.save('Rapport.pdf'); alert('PDF downloadet.');
-         }
+             if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+                try { 
+                    await navigator.share({ files: [file], title: report.title, text: 'PDF rapport' }); 
+                } catch (err) {
+                    console.warn("Share failed, downloading instead", err);
+                    doc.save('Rapport.pdf');
+                }
+             } else {
+                doc.save('Rapport.pdf'); 
+                alert('PDF downloadet.');
+             }
+         } catch(e) { console.error(e); }
+      }
+
+      // Helper til download
+      function downloadFile(blob, filename) {
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url; a.download = filename;
+          document.body.appendChild(a); a.click();
+          document.body.removeChild(a);
       }
 
       // Klik på knapper inde i modalen
