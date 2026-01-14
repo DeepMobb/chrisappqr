@@ -332,7 +332,6 @@
         saved.slice().reverse().forEach(rep=>{ 
             const el=document.createElement('div'); el.className='report-item'; 
             
-            // Knapper til forside
             const btnWrap = document.createElement('div');
             btnWrap.style.cssText = "display:flex;gap:8px;";
 
@@ -435,22 +434,29 @@
       window.openReport=openReport;
       document.getElementById('closeReportModal').addEventListener('click', ()=> reportModalWrap.style.display='none');
 
-      // --- Helper: Download Fil (hvis deling fejler) ---
+      // --- Helper: Download og Mailto Fallback ---
       function downloadFile(blob, filename) {
+          // 1. Start download
           const url = URL.createObjectURL(blob);
           const a = document.createElement("a");
           a.href = url; a.download = filename;
           document.body.appendChild(a); a.click();
           document.body.removeChild(a);
+          
+          // 2. Åbn mail draft (uden vedhæftning, da det er blokeret)
+          setTimeout(() => {
+             const subject = encodeURIComponent("Rapport: " + (filename.replace('.xlsx','').replace('.pdf','')));
+             const body = encodeURIComponent("Hej,\n\nHer er rapporten.\n\n(Husk at vedhæfte filen fra dine overførsler/downloads, da browseren ikke må gøre det automatisk).");
+             window.location.href = `mailto:?subject=${subject}&body=${body}`;
+          }, 500);
       }
 
-      // --- EXCEL GENERATOR (DEL først, ellers DOWNLOAD) ---
+      // --- EXCEL GENERATOR ---
       async function generateAndShareExcel(report) {
          if(!report) return;
          try {
              const wb = XLSX.utils.book_new();
              
-             // Opfyldningsliste
              const opfyData = [['#', 'Område', 'Varenummer', 'Materiale', 'Lager/område', 'Plads', 'Antal', 'Enhed']];
              report.items.forEach((it, idx) => {
                  opfyData.push([idx + 1, it.område||'', it.varenummer||'', it.materiale||'', it.lager||'', it.plads||'', it.qty, it.enhed||'']);
@@ -458,7 +464,6 @@
              const ws1 = XLSX.utils.aoa_to_sheet(opfyData);
              XLSX.utils.book_append_sheet(wb, ws1, "Opfyldning");
 
-             // Månedsoptælling
              const monthItems = report.items.filter(i => i.inMonthReport);
              if(monthItems.length > 0){
                  const monthData = [['#', 'Område', 'Varenummer', 'Materiale', 'Månedsantal', 'Enhed']];
@@ -471,28 +476,25 @@
 
              const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
              const blob = new Blob([wbout], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
-             // VIGTIGT: Opretter en rigtig fil til deling
              const file = new File([blob], "Rapport.xlsx", { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
 
-             // Prøv at dele
              if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
                  try {
                     await navigator.share({ files: [file], title: report.title, text: 'Her er Excel rapporten.' });
                  } catch (err) {
                     if (err.name !== 'AbortError') { 
-                       alert('Deling mislykkedes - downloader filen i stedet.');
+                       alert('Deling mislykkedes (Sikkerhed). Filen downloades nu. Vedhæft den selv til mailen, der åbner.');
                        downloadFile(blob, "Rapport.xlsx"); 
                     }
                  }
              } else {
-                 // Hvis browser ikke kan dele
-                 alert('Din enhed understøtter ikke direkte deling af Excel-filer. Filen er downloadet. Åbn din mail-app og vedhæft filen fra Downloads.');
+                 alert('Browseren tillader ikke direkte deling. Filen downloades nu. Vedhæft den selv til mailen, der åbner.');
                  downloadFile(blob, "Rapport.xlsx");
              }
          } catch(e) { console.error(e); alert('Fejl ved Excel generering'); }
       }
 
-      // --- PDF GENERATOR (DEL først, ellers DOWNLOAD) ---
+      // --- PDF GENERATOR ---
       async function generateAndSharePDF(report) {
          if(!report) return;
          try {
@@ -525,13 +527,13 @@
                     await navigator.share({ files: [file], title: report.title, text: 'Her er PDF rapporten.' }); 
                 } catch (err) {
                     if (err.name !== 'AbortError') { 
-                       alert('Deling mislykkedes - downloader filen i stedet.');
-                       doc.save('Rapport.pdf');
+                       alert('Deling mislykkedes (Sikkerhed). Filen downloades nu. Vedhæft den selv til mailen, der åbner.');
+                       downloadFile(pdfBlob, "Rapport.pdf");
                     }
                 }
              } else {
-                alert('Din enhed understøtter ikke direkte deling af PDF-filer. Filen er downloadet. Åbn din mail-app og vedhæft filen fra Downloads.');
-                doc.save('Rapport.pdf');
+                alert('Browseren tillader ikke direkte deling. Filen downloades nu. Vedhæft den selv til mailen, der åbner.');
+                downloadFile(pdfBlob, "Rapport.pdf");
              }
          } catch(e) { console.error(e); }
       }
