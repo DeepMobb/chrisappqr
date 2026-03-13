@@ -201,6 +201,7 @@
                            <option value="KS">KS</option>
                            <option value="PL">PL</option>
                            <option value="Dunke">Dunke</option>
+                           <option value="m2">m2</option>
                        </select>
                    </div>
                </div>
@@ -256,6 +257,24 @@
         </div>
 
         <div style="margin-top:18px;">
+          <h3 style="margin:6px 0 8px 0;">Pakkeliste <span style="font-size:12px; font-weight:normal; color:#777;">(Sammentalt)</span></h3>
+          <div id="pack_table_wrap">
+            <table class="rtable" id="packTable">
+               <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Varenummer</th>
+                  <th>Materiale</th>
+                  <th>Samlet Antal</th>
+                  <th>Enhed</th>
+                </tr>
+              </thead>
+              <tbody id="packTbody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div style="margin-top:18px;">
           <h3 style="margin:6px 0 8px 0;">Månedsoptælling</h3>
           <div id="month_table_wrap">
             <table class="rtable" id="monthTable">
@@ -270,24 +289,6 @@
                 </tr>
               </thead>
               <tbody id="monthTbody"></tbody>
-            </table>
-          </div>
-        </div>
-
-        <div style="margin-top:18px;">
-          <h3 style="margin:6px 0 8px 0;">Pakkeliste <span style="font-size:12px; font-weight:normal; color:#777;">(Sammentalt)</span></h3>
-          <div id="pack_table_wrap">
-            <table class="rtable" id="packTable">
-               <thead>
-                <tr>
-                  <th>#</th>
-                  <th>Varenummer</th>
-                  <th>Materiale</th>
-                  <th>Samlet Antal</th>
-                  <th>Enhed</th>
-                </tr>
-              </thead>
-              <tbody id="packTbody"></tbody>
             </table>
           </div>
         </div>
@@ -342,7 +343,7 @@
       const reportMeta = document.getElementById('reportMeta');
       const opfyTbody = document.getElementById('opfyTbody');
       const monthTbody = document.getElementById('monthTbody');
-      const packTbody = document.getElementById('packTbody'); // Ny pakkeliste krop
+      const packTbody = document.getElementById('packTbody');
       const exportReportBtn = document.getElementById('exportReportBtn');
 
       let stream = null, scanning = false, lastFound = null;
@@ -506,47 +507,50 @@
       window.openReport=openReport;
       document.getElementById('closeReportModal').addEventListener('click', ()=> reportModalWrap.style.display='none');
 
-      function downloadFile(blob, filename) {
+      // Helper til selve download funktionen (når share fejler)
+      function triggerDownload(blob, filename) {
           const url = URL.createObjectURL(blob);
           const a = document.createElement("a");
           a.href = url; a.download = filename;
           document.body.appendChild(a); a.click();
           document.body.removeChild(a);
-          
-          setTimeout(() => {
-             const subject = encodeURIComponent("Rapport: " + (filename.replace('.pdf','')));
-             const body = encodeURIComponent("Hej,\n\nHer er rapporten.\n\n(Husk at vedhæfte filen fra dine overførsler/downloads, da browseren ikke må gøre det automatisk).");
-             window.location.href = `mailto:?subject=${subject}&body=${body}`;
-          }, 500);
       }
 
+      // Kaldes hvis browser ikke understøtter share, downloader filer og åbner mail
+      function doFallbackDownload(blob1, blob2, title) {
+          triggerDownload(blob1, "Opfyldningsliste.pdf");
+          if(blob2) {
+              setTimeout(() => { triggerDownload(blob2, "Maanedsoptaelling.pdf"); }, 500);
+          }
+          
+          setTimeout(() => {
+             const subject = encodeURIComponent("Rapport: " + title);
+             const body = encodeURIComponent("Hej,\n\nHer er rapporterne.\n\n(Husk at vedhæfte filerne fra dine downloads).");
+             window.location.href = `mailto:?subject=${subject}&body=${body}`;
+          }, blob2 ? 1000 : 500);
+      }
+
+      // --- PDF GENERATOR (Deler Opfyldning+Pakkeliste, og Månedsoptælling som To separate filer) ---
       async function generateAndSharePDF(report) {
          if(!report) return;
          try {
              const { jsPDF } = window.jspdf;
-             const doc = new jsPDF();
              
-             doc.setFontSize(18); doc.text(report.title, 14, 15);
-             doc.setFontSize(10); doc.text('Oprettet: ' + new Date(report.created).toLocaleString(), 14, 22);
+             // ==========================================
+             // PDF 1: Opfyldningsliste & Pakkeliste
+             // ==========================================
+             const doc1 = new jsPDF();
+             doc1.setFontSize(18); doc1.text(report.title + " (Opfyldning)", 14, 15);
+             doc1.setFontSize(10); doc1.text('Oprettet: ' + new Date(report.created).toLocaleString(), 14, 22);
              
              // Tabel 1: Opfyldningsliste
              const cols1 = ['#', 'Område', 'Varenummer', 'Materiale', 'Lager/område', 'Plads', 'Antal', 'Enhed'];
              const rows1 = report.items.map((it, idx) => [ idx+1, it.område||'', it.varenummer||'', it.materiale||'', it.lager||'', it.plads||'', it.qty, it.enhed||'' ]);
              
-             doc.setFontSize(14); doc.text("Opfyldningsliste", 14, 32);
-             doc.autoTable({ head: [cols1], body: rows1, startY: 35, theme: 'grid' });
+             doc1.setFontSize(14); doc1.text("Opfyldningsliste", 14, 32);
+             doc1.autoTable({ head: [cols1], body: rows1, startY: 35, theme: 'grid' });
              
-             let finalY = doc.lastAutoTable.finalY || 40;
-
-             // Tabel 2: Månedsoptælling
-             const monthItems = report.items.filter(i => i.inMonthReport);
-             if(monthItems.length > 0) {
-                doc.text("Månedsoptælling", 14, finalY + 10);
-                const cols2 = ['#', 'Område', 'Varenummer', 'Materiale', 'Månedsantal', 'Enhed'];
-                const rows2 = monthItems.map((it, idx) => [ idx+1, it.område||'', it.varenummer||'', it.materiale||'', it.monthQty, it.monthUnit||it.enhed||'' ]);
-                doc.autoTable({ head: [cols2], body: rows2, startY: finalY + 15, theme: 'grid' });
-                finalY = doc.lastAutoTable.finalY;
-             }
+             let finalY = doc1.lastAutoTable.finalY || 40;
 
              // Tabel 3: Pakkeliste (Aggregeret)
              const packMap = {};
@@ -558,27 +562,50 @@
              const packList = Object.values(packMap).sort((a, b) => a.varenummer.localeCompare(b.varenummer));
              
              if (packList.length > 0) {
-                 doc.text("Pakkeliste", 14, finalY + 10);
+                 doc1.text("Pakkeliste", 14, finalY + 10);
                  const cols3 = ['#', 'Varenummer', 'Materiale', 'Samlet Antal', 'Enhed'];
                  const rows3 = packList.map((it, idx) => [ idx+1, it.varenummer, it.materiale, it.qty, it.enhed ]);
-                 doc.autoTable({ head: [cols3], body: rows3, startY: finalY + 15, theme: 'grid' });
+                 doc1.autoTable({ head: [cols3], body: rows3, startY: finalY + 15, theme: 'grid' });
              }
 
-             const pdfBlob = doc.output('blob');
-             const file = new File([pdfBlob], "Rapport.pdf", { type: "application/pdf" });
+             const blob1 = doc1.output('blob');
+             const file1 = new File([blob1], "Opfyldningsliste.pdf", { type: "application/pdf" });
+             
+             let filesToShare = [file1];
+             let blob2 = null;
 
-             if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+             // ==========================================
+             // PDF 2: Månedsoptælling (Kun hvis der er data)
+             // ==========================================
+             const monthItems = report.items.filter(i => i.inMonthReport);
+             if(monthItems.length > 0) {
+                const doc2 = new jsPDF();
+                doc2.setFontSize(18); doc2.text(report.title + " (Månedsoptælling)", 14, 15);
+                doc2.setFontSize(10); doc2.text('Oprettet: ' + new Date(report.created).toLocaleString(), 14, 22);
+
+                doc2.setFontSize(14); doc2.text("Månedsoptælling", 14, 32);
+                const cols2 = ['#', 'Område', 'Varenummer', 'Materiale', 'Månedsantal', 'Enhed'];
+                const rows2 = monthItems.map((it, idx) => [ idx+1, it.område||'', it.varenummer||'', it.materiale||'', it.monthQty, it.monthUnit||it.enhed||'' ]);
+                doc2.autoTable({ head: [cols2], body: rows2, startY: 35, theme: 'grid' });
+                
+                blob2 = doc2.output('blob');
+                const file2 = new File([blob2], "Maanedsoptaelling.pdf", { type: "application/pdf" });
+                filesToShare.push(file2); // Tilføj fil 2 til delingslisten
+             }
+
+             // --- DEL ELLER DOWNLOAD ---
+             if (navigator.share && navigator.canShare && navigator.canShare({ files: filesToShare })) {
                 try { 
-                    await navigator.share({ files: [file], title: report.title, text: 'Her er PDF rapporten.' }); 
+                    await navigator.share({ files: filesToShare, title: report.title, text: 'Her er rapporten.' }); 
                 } catch (err) {
                     if (err.name !== 'AbortError') { 
-                       alert('Deling mislykkedes (Sikkerhed). Filen downloades nu. Vedhæft den selv til mailen, der åbner.');
-                       downloadFile(pdfBlob, "Rapport.pdf");
+                       alert('Deling mislykkedes (Sikkerhed). Filerne downloades nu. Vedhæft dem selv til mailen, der åbner.');
+                       doFallbackDownload(blob1, blob2, report.title);
                     }
                 }
              } else {
-                alert('Browseren tillader ikke direkte deling. Filen downloades nu. Vedhæft den selv til mailen, der åbner.');
-                downloadFile(pdfBlob, "Rapport.pdf");
+                alert('Browseren tillader ikke direkte deling. Filerne downloades nu. Vedhæft dem selv til mailen, der åbner.');
+                doFallbackDownload(blob1, blob2, report.title);
              }
          } catch(e) { console.error(e); }
       }
@@ -593,10 +620,14 @@
       function handleFound(data) {
         if (!data) return;
         scanning = false; lastFound = data;
+        
         if(navigator.vibrate) try{navigator.vibrate(200);}catch(e){}
+        
         if(scanBoxOverlay) scanBoxOverlay.style.display='none';
+        
         if(foundArea) {
             foundArea.style.display='flex'; 
+            
             if(foundText) {
                 const f = parseQRFields(data);
                 let displayStr = "";
@@ -607,8 +638,10 @@
                 if(f.plads) displayStr += `Plads: ${f.plads}\n`; 
                 if(f.antal_raw) displayStr += `Antal: ${f.antal_raw}`;
                 else if(f.enhed) displayStr += `Enhed: ${f.enhed}`;
+                
                 foundText.innerText = displayStr.trim();
             }
+
             if(qtyInput) qtyInput.value=1;
             if(monthCheckbox) monthCheckbox.checked = false;
             setMonthVisibility();
@@ -622,30 +655,65 @@
           hiddenCanvas.width = video.videoWidth;
           const ctx = hiddenCanvas.getContext("2d");
           ctx.drawImage(video, 0, 0, hiddenCanvas.width, hiddenCanvas.height);
+          
           const imageData = ctx.getImageData(0, 0, hiddenCanvas.width, hiddenCanvas.height);
           const code = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: "dontInvert" });
-          if (code && code.data && code.data.trim()) { handleFound(code.data); return; }
+
+          if (code && code.data && code.data.trim()) {
+            handleFound(code.data);
+            return;
+          }
         }
         requestAnimationFrame(tick);
       }
 
       async function startCameraAndScan(){
         try {
-          const constraints = { video: { facingMode: 'environment', width: { ideal: 1920 }, height: { ideal: 1080 }, advanced: [{ focusMode: 'continuous' }] }, audio:false };
+          const constraints = { 
+              video: { 
+                  facingMode: 'environment',
+                  width: { ideal: 1920 },
+                  height: { ideal: 1080 },
+                  advanced: [{ focusMode: 'continuous' }] 
+              }, 
+              audio:false 
+          };
+          
           if(window._currentStream){ window._currentStream.getTracks().forEach(t=>t.stop()); window._currentStream=null; }
+          
           const _stream = await navigator.mediaDevices.getUserMedia(constraints);
-          window._currentStream = _stream; video.srcObject = _stream; await video.play();
+          window._currentStream = _stream;
+          video.srcObject = _stream;
+          
+          await video.play();
 
           const track = _stream.getVideoTracks()[0];
           const capabilities = track.getCapabilities();
-          if (capabilities.focusMode && capabilities.focusMode.includes('continuous')) { try { await track.applyConstraints({ advanced: [{ focusMode: 'continuous' }] }); } catch(e) {} }
-          if (capabilities.zoom) { try { const zoomLevel = Math.min(capabilities.zoom.max, 2.0); await track.applyConstraints({ advanced: [{ zoom: zoomLevel }] }); } catch(e) {} }
+
+          if (capabilities.focusMode && capabilities.focusMode.includes('continuous')) {
+             try { await track.applyConstraints({ advanced: [{ focusMode: 'continuous' }] }); } catch(e) {}
+          }
+
+          if (capabilities.zoom) {
+             try {
+                const zoomLevel = Math.min(capabilities.zoom.max, 2.0); 
+                await track.applyConstraints({ advanced: [{ zoom: zoomLevel }] });
+             } catch(e) {}
+          }
           
           if(scanBoxOverlay) scanBoxOverlay.style.display='block';
           if(foundArea) foundArea.style.display='none';
+          
           if(monthQtyInput) monthQtyInput.value = '';
-          scanning = true; requestAnimationFrame(tick);
-        } catch(err){ console.error(err); showError('Kunne ikke starte kamera: ' + err.name); scannerModal.style.display='none'; }
+
+          scanning = true;
+          requestAnimationFrame(tick);
+          
+        } catch(err){ 
+          console.error(err); 
+          showError('Kunne ikke starte kamera: ' + err.name); 
+          scannerModal.style.display='none'; 
+        }
       }
 
       function stopCamera(){ 
@@ -654,9 +722,15 @@
         try{ video.pause(); video.srcObject=null; } catch(e){} 
       }
 
+      // Bindings
       document.getElementById('newListBtn').addEventListener('click', ()=> { items=[]; renderItems(); mainScreen.style.display='none'; initView.style.display='block'; });
       document.getElementById('backToMain').addEventListener('click', ()=> { initView.style.display='none'; mainScreen.style.display='block'; });
-      document.getElementById('openScannerBtn').addEventListener('click', ()=>{ scannerModal.style.display='flex'; foundArea.style.display='none'; qtyInput.value=1; monthCheckbox.checked=false; setMonthVisibility(); startCameraAndScan(); });
+      
+      document.getElementById('openScannerBtn').addEventListener('click', ()=>{ 
+        scannerModal.style.display='flex'; foundArea.style.display='none'; 
+        qtyInput.value=1; monthCheckbox.checked=false; setMonthVisibility(); 
+        startCameraAndScan(); 
+      });
       document.getElementById('closeScanner').addEventListener('click', ()=>{ stopCamera(); scannerModal.style.display='none'; });
 
       document.getElementById('acceptBtn').addEventListener('click', ()=>{ 
@@ -665,8 +739,10 @@
         let m=monthCheckbox.checked ? (parseInt(monthQtyInput.value,10)||0) : 0;
         let u = monthCheckbox.checked ? monthUnitSelect.value : '';
         let isChecked = monthCheckbox.checked;
+
         addOrAggregateItem(lastFound, q, m, u, isChecked); 
         renderItems(); 
+        
         if(foundArea) foundArea.style.display='none';
         if(scanBoxOverlay) scanBoxOverlay.style.display='block';
         lastFound=null; scanning=true; requestAnimationFrame(tick);
