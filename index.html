@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-  <title>QR List Scanner</title>
+  <title>Opfyldningsliste</title>
 
   <script>
     window.startNewList = function(){
@@ -55,6 +55,10 @@
     .reports{margin-top:14px;display:flex;flex-direction:column;gap:10px;}
     .report-item{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;border-radius:10px;background:#fff;border:1px solid rgba(0,0,0,0.05);}
     
+    /* Nye stilarter til at gøre rapport-titlen klikbar */
+    .report-title-link { flex: 1; cursor: pointer; text-align: left; padding: 4px 0; }
+    .report-title-link:active { opacity: 0.7; }
+    
     .items{min-height:220px;border-radius:10px;padding:12px;background:#fff;border:1px dashed #ccc;overflow:auto;}
     .item{display:flex;gap:12px;align-items:center;padding:8px;border-radius:8px;border-bottom:1px solid #eee;}
     .qty-badge{background:#f3f3f3;border-radius:8px;padding:6px 10px;font-weight:700;color:var(--dark);text-align:center;min-width:40px;}
@@ -63,6 +67,7 @@
     
     /* MODAL & SCANNER */
     .modal{position:fixed;left:0;top:0;right:0;bottom:0;display:flex;align-items:center;justify-content:center;z-index:120;background:rgba(0,0,0,0.95);}
+    #reportModalWrap { background: rgba(255, 255, 255, 0.95); } /* Gør rapportbaggrunden hvid */
     
     .scanner{width:100%; height:100%; display:flex; flex-direction:column; position:relative;}
     
@@ -78,7 +83,7 @@
     .scan-line{position:absolute;left:10%;right:10%;height:2px;background:#ff0000;box-shadow:0 0 4px red; animation:scanmove 2s ease-in-out infinite;}
     @keyframes scanmove{0%{top:10%}50%{top:90%}100%{top:10%}}
 
-    /* --- FULD SKÆRM RESULTAT --- */
+    /* --- FULD SKÆRM RESULTAT & SCROLL --- */
     #foundArea {
         position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 2000;
         background: #ffffff; display: none; flex-direction: column;
@@ -97,7 +102,7 @@
         background-repeat: no-repeat; background-position: right 12px top 50%; background-size: 12px auto;
     }
 
-    .report-modal{width:95%; max-width:1000px; background:var(--card); border-radius:12px; padding:14px; max-height:90vh; overflow:auto;}
+    .report-modal{width:95%; max-width:1000px; background:var(--card); border-radius:12px; padding:14px; max-height:90vh; overflow:auto; box-shadow: 0 10px 30px rgba(0,0,0,0.1);}
     table.rtable{width:100%;border-collapse:collapse;margin-top:8px;}
     table.rtable th, table.rtable td{padding:10px;border-bottom:1px solid rgba(0,0,0,0.06);text-align:left;font-size:13px;vertical-align:middle;}
     table.rtable th{background:#e0e0e0; font-weight:700; color:var(--dark); border-bottom: 2px solid #ccc;}
@@ -111,8 +116,8 @@
     <header>
       <img src="logo.png" alt="Logo" class="logo-img" onerror="this.style.display='none'" />
       <div>
-        <h1>QR List Scanner</h1>
-        <p class="lead">Lagerstyring</p>
+        <h1>Opfyldningsliste</h1>
+        <p class="lead">Udviklet i Vamdrup</p>
       </div>
     </header>
 
@@ -145,26 +150,35 @@
 
     <div id="scannerModal" class="modal" style="display:none;">
       <div class="scanner">
+        
         <div style="position:absolute; top:20px; right:20px; z-index:20;">
            <button id="closeScanner" style="background:rgba(0,0,0,0.5); color:white; padding:10px 20px; border-radius:30px; font-size:14px; border:1px solid rgba(255,255,255,0.3);">Luk Scanner</button>
         </div>
+
         <div class="video-wrap">
           <video id="video" autoplay muted playsinline></video>
-          <div class="scan-box" id="scanBoxOverlay"><div class="scan-line"></div></div>
+          <div class="scan-box" id="scanBoxOverlay">
+            <div class="scan-line"></div>
+          </div>
         </div>
+
         <div id="foundArea" style="display:none;">
           <div class="found-content">
+            
             <div style="margin-bottom: 20px; border-bottom: 1px solid #eee; padding-bottom:10px;">
                 <div style="font-weight:800; font-size:24px; color:var(--dark);">Fundet vare! 🎉</div>
                 <div style="color:#777; font-size:14px;">Bekræft venligst data nedenfor</div>
             </div>
+
             <div style="font-weight:600; font-size:13px; text-transform:uppercase; color:#888; margin-bottom:6px;">Scannet tekst</div>
             <div id="foundText" style="word-break:break-word; color:#111; font-weight:500; font-size:16px; margin-bottom:30px; line-height:1.5; background:#f0f0f0; padding:12px; border-radius:8px;"></div>
+
             <div style="display:flex; gap:16px; align-items:flex-start;">
                <div style="flex:1;">
                    <label style="font-size:14px; font-weight:700; display:block; margin-bottom:8px; color:#333;">Antal stk.</label>
                    <input id="qtyInput" class="num-input" type="number" min="0" step="1" value="1" inputmode="numeric">
                </div>
+               
                <div style="flex:1; padding-top:34px;">
                   <label style="display:flex; align-items:center; gap:12px; cursor:pointer; background:#fff; border:2px solid #eee; padding:12px; border-radius:12px;">
                     <input id="monthCheckbox" type="checkbox" style="width:24px; height:24px;" />
@@ -172,6 +186,7 @@
                   </label>
                </div>
             </div>
+
             <div id="monthInputRow" style="display:none; margin-top:24px;">
                <div style="display:flex; gap:16px;">
                    <div style="flex:1;">
@@ -190,13 +205,19 @@
                    </div>
                </div>
             </div>
+
             <div class="controls">
               <button id="declineBtn" class="danger" style="height: 60px;">Afvis</button>
               <button id="acceptBtn" class="primary" style="height: 60px;">Accepter</button>
             </div>
-            <div style="text-align:center; margin-top:15px; color:#999; font-size:12px;">Scroll ned hvis du ikke kan se knapperne</div>
+
+            <div style="text-align:center; margin-top:15px; color:#999; font-size:12px;">
+                Scroll ned hvis du ikke kan se knapperne
+            </div>
+
           </div>
         </div>
+
       </div>
     </div>
 
@@ -212,24 +233,65 @@
             <button id="closeReportModal" class="ghost">Luk</button>
           </div>
         </div>
+
         <div style="margin-top:12px;">
           <h3 style="margin:6px 0 8px 0;">Opfyldningsliste</h3>
           <div id="opfy_table_wrap">
             <table class="rtable" id="opfyTable">
-              <thead><tr><th>#</th><th>Område</th><th>Varenummer</th><th>Materiale</th><th>Lager/område</th><th>Plads</th><th>Antal</th><th>Enhed</th></tr></thead>
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Område</th>
+                  <th>Varenummer</th>
+                  <th>Materiale</th>
+                  <th>Lager/område</th>
+                  <th>Plads</th>
+                  <th>Antal</th>
+                  <th>Enhed</th>
+                </tr>
+              </thead>
               <tbody id="opfyTbody"></tbody>
             </table>
           </div>
         </div>
+
         <div style="margin-top:18px;">
           <h3 style="margin:6px 0 8px 0;">Månedsoptælling</h3>
           <div id="month_table_wrap">
             <table class="rtable" id="monthTable">
-               <thead><tr><th>#</th><th>Område</th><th>Varenummer</th><th>Materiale</th><th>Månedsantal</th><th>Enhed</th></tr></thead>
-               <tbody id="monthTbody"></tbody>
+               <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Område</th>
+                  <th>Varenummer</th>
+                  <th>Materiale</th>
+                  <th>Månedsantal</th>
+                  <th>Enhed</th>
+                </tr>
+              </thead>
+              <tbody id="monthTbody"></tbody>
             </table>
           </div>
         </div>
+
+        <div style="margin-top:18px;">
+          <h3 style="margin:6px 0 8px 0;">Pakkeliste <span style="font-size:12px; font-weight:normal; color:#777;">(Sammentalt)</span></h3>
+          <div id="pack_table_wrap">
+            <table class="rtable" id="packTable">
+               <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Varenummer</th>
+                  <th>Materiale</th>
+                  <th>Samlet Antal</th>
+                  <th>Enhed</th>
+                </tr>
+              </thead>
+              <tbody id="packTbody"></tbody>
+            </table>
+          </div>
+        </div>
+
       </div>
     </div>
 
@@ -280,6 +342,7 @@
       const reportMeta = document.getElementById('reportMeta');
       const opfyTbody = document.getElementById('opfyTbody');
       const monthTbody = document.getElementById('monthTbody');
+      const packTbody = document.getElementById('packTbody'); // Ny pakkeliste krop
       const exportReportBtn = document.getElementById('exportReportBtn');
 
       let stream = null, scanning = false, lastFound = null;
@@ -327,31 +390,29 @@
         saved.slice().reverse().forEach(rep=>{ 
             const el=document.createElement('div'); el.className='report-item'; 
             
-            // Knapper til forside
             const btnWrap = document.createElement('div');
             btnWrap.style.cssText = "display:flex;gap:8px;";
 
             const pdfBtn = document.createElement('button');
             pdfBtn.className = 'ghost pdf-icon';
             pdfBtn.textContent = 'PDF';
-            pdfBtn.onclick = () => generateAndSharePDF(rep);
-
-            const openBtn = document.createElement('button');
-            openBtn.className = 'ghost';
-            openBtn.textContent = 'Åbn';
-            openBtn.onclick = () => openReport(rep.id);
+            pdfBtn.onclick = (e) => { e.stopPropagation(); generateAndSharePDF(rep); }
 
             const delBtn = document.createElement('button');
             delBtn.className = 'ghost';
             delBtn.style.color = '#c00';
             delBtn.textContent = 'Slet';
-            delBtn.onclick = () => deleteReport(rep.id);
+            delBtn.onclick = (e) => { e.stopPropagation(); deleteReport(rep.id); }
 
             btnWrap.appendChild(pdfBtn);
-            btnWrap.appendChild(openBtn);
             btnWrap.appendChild(delBtn);
 
-            el.innerHTML=`<div><div style="font-weight:600">${escapeHtml(rep.title)}</div><small class="muted-note">${new Date(rep.created).toLocaleString()}</small></div>`;
+            const textWrap = document.createElement('div');
+            textWrap.className = 'report-title-link';
+            textWrap.onclick = () => openReport(rep.id);
+            textWrap.innerHTML=`<div style="font-weight:600">${escapeHtml(rep.title)}</div><small class="muted-note">${new Date(rep.created).toLocaleString()}</small>`;
+
+            el.appendChild(textWrap);
             el.appendChild(btnWrap);
             reportsList.appendChild(el); 
         }); 
@@ -408,23 +469,43 @@
         
         const t1=document.getElementById('opfyTbody'); t1.innerHTML='';
         const t2=document.getElementById('monthTbody'); t2.innerHTML='';
+        const t3=document.getElementById('packTbody'); t3.innerHTML='';
         
+        const packMap = {};
+
         rep.items.forEach((it,idx)=>{
+           // Tabel 1: Opfyldningsliste
            const row=`<tr><td>${idx+1}</td><td>${it.område||''}</td><td>${it.varenummer||''}</td><td>${it.materiale||''}</td><td>${it.lager||''}</td><td>${it.plads||''}</td><td>${it.qty}</td><td>${it.enhed||''}</td></tr>`;
            t1.insertAdjacentHTML('beforeend',row);
+           
+           // Tabel 2: Månedsoptælling
            if(it.inMonthReport){
               const u = it.monthUnit || it.enhed || '';
               const row2=`<tr><td>${idx+1}</td><td>${it.område||''}</td><td>${it.varenummer||''}</td><td>${it.materiale||''}</td><td>${it.monthQty}</td><td>${u}</td></tr>`;
               t2.insertAdjacentHTML('beforeend',row2);
            }
+
+           // Aggregering til Pakkeliste (Tabel 3)
+           const vn = it.varenummer || 'Ukendt';
+           if(!packMap[vn]) {
+               packMap[vn] = { varenummer: vn, materiale: it.materiale || '', qty: 0, enhed: it.enhed || '' };
+           }
+           packMap[vn].qty += (it.qty || 0);
         });
+
+        // Udskriv Pakkeliste sorteret på varenummer
+        const packList = Object.values(packMap).sort((a, b) => a.varenummer.localeCompare(b.varenummer));
+        packList.forEach((it, idx) => {
+            const row3 = `<tr><td>${idx+1}</td><td>${it.varenummer}</td><td>${it.materiale}</td><td>${it.qty}</td><td>${it.enhed}</td></tr>`;
+            t3.insertAdjacentHTML('beforeend', row3);
+        });
+
         reportModalWrap.style.display='flex'; 
         reportModalWrap.dataset.currentReport = JSON.stringify(rep);
       }
       window.openReport=openReport;
       document.getElementById('closeReportModal').addEventListener('click', ()=> reportModalWrap.style.display='none');
 
-      // --- Helper: Download og Mailto Fallback ---
       function downloadFile(blob, filename) {
           const url = URL.createObjectURL(blob);
           const a = document.createElement("a");
@@ -433,13 +514,12 @@
           document.body.removeChild(a);
           
           setTimeout(() => {
-             const subject = encodeURIComponent("Rapport: " + (filename.replace('.xlsx','').replace('.pdf','')));
+             const subject = encodeURIComponent("Rapport: " + (filename.replace('.pdf','')));
              const body = encodeURIComponent("Hej,\n\nHer er rapporten.\n\n(Husk at vedhæfte filen fra dine overførsler/downloads, da browseren ikke må gøre det automatisk).");
              window.location.href = `mailto:?subject=${subject}&body=${body}`;
           }, 500);
       }
 
-      // --- PDF GENERATOR (DEL først, ellers DOWNLOAD) ---
       async function generateAndSharePDF(report) {
          if(!report) return;
          try {
@@ -449,19 +529,39 @@
              doc.setFontSize(18); doc.text(report.title, 14, 15);
              doc.setFontSize(10); doc.text('Oprettet: ' + new Date(report.created).toLocaleString(), 14, 22);
              
+             // Tabel 1: Opfyldningsliste
              const cols1 = ['#', 'Område', 'Varenummer', 'Materiale', 'Lager/område', 'Plads', 'Antal', 'Enhed'];
              const rows1 = report.items.map((it, idx) => [ idx+1, it.område||'', it.varenummer||'', it.materiale||'', it.lager||'', it.plads||'', it.qty, it.enhed||'' ]);
              
              doc.setFontSize(14); doc.text("Opfyldningsliste", 14, 32);
              doc.autoTable({ head: [cols1], body: rows1, startY: 35, theme: 'grid' });
              
+             let finalY = doc.lastAutoTable.finalY || 40;
+
+             // Tabel 2: Månedsoptælling
              const monthItems = report.items.filter(i => i.inMonthReport);
              if(monthItems.length > 0) {
-                let finalY = doc.lastAutoTable.finalY || 40;
                 doc.text("Månedsoptælling", 14, finalY + 10);
                 const cols2 = ['#', 'Område', 'Varenummer', 'Materiale', 'Månedsantal', 'Enhed'];
                 const rows2 = monthItems.map((it, idx) => [ idx+1, it.område||'', it.varenummer||'', it.materiale||'', it.monthQty, it.monthUnit||it.enhed||'' ]);
                 doc.autoTable({ head: [cols2], body: rows2, startY: finalY + 15, theme: 'grid' });
+                finalY = doc.lastAutoTable.finalY;
+             }
+
+             // Tabel 3: Pakkeliste (Aggregeret)
+             const packMap = {};
+             report.items.forEach(it => {
+                 const vn = it.varenummer || 'Ukendt';
+                 if(!packMap[vn]) packMap[vn] = { varenummer: vn, materiale: it.materiale || '', qty: 0, enhed: it.enhed || '' };
+                 packMap[vn].qty += (it.qty || 0);
+             });
+             const packList = Object.values(packMap).sort((a, b) => a.varenummer.localeCompare(b.varenummer));
+             
+             if (packList.length > 0) {
+                 doc.text("Pakkeliste", 14, finalY + 10);
+                 const cols3 = ['#', 'Varenummer', 'Materiale', 'Samlet Antal', 'Enhed'];
+                 const rows3 = packList.map((it, idx) => [ idx+1, it.varenummer, it.materiale, it.qty, it.enhed ]);
+                 doc.autoTable({ head: [cols3], body: rows3, startY: finalY + 15, theme: 'grid' });
              }
 
              const pdfBlob = doc.output('blob');
