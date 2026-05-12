@@ -46,6 +46,7 @@
     
     /* Ikon farver */
     .ghost.pdf-icon { color: #D32F2F; font-weight: 700; }
+    .ghost.edit-icon { color: #1976D2; font-weight: 700; }
     
     .fab { width:64px; height:64px; border-radius:20px; background:var(--dark); color:var(--white); font-size: 24px; box-shadow: 0 6px 16px rgba(0,0,0,0.2); }
 
@@ -64,6 +65,9 @@
     .qty-badge{background:#f3f3f3;border-radius:8px;padding:6px 10px;font-weight:700;color:var(--dark);text-align:center;min-width:40px;}
     .month-badge{background:#fff;border-radius:4px;padding:2px 6px;font-size:10px;border:1px solid #ddd;display:block;margin-top:4px;color:#333;}
     .toolbar{display:flex;gap:12px;margin-top:12px;justify-content:space-between;align-items:center;}
+
+    /* Banner der viser at man er i redigeringstilstand */
+    .edit-banner { background: #E3F2FD; color: #1565C0; padding: 10px 14px; border-radius: 10px; margin-bottom: 12px; font-size: 14px; font-weight: 600; border: 1px solid #BBDEFB; display: none; }
     
     /* MODAL & SCANNER */
     .modal{position:fixed;left:0;top:0;right:0;bottom:0;display:flex;align-items:center;justify-content:center;z-index:120;background:rgba(0,0,0,0.95);}
@@ -134,8 +138,9 @@
 
     <section id="initView" style="display:none;margin-top:16px;">
       <div class="card">
+        <div id="editBanner" class="edit-banner">✏️ Du redigerer en eksisterende rapport</div>
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-          <div><h3 style="margin:0;">Ny rapport</h3><small class="muted-note">Klar til scanning</small></div>
+          <div><h3 id="initTitle" style="margin:0;">Ny rapport</h3><small class="muted-note" id="initSubtitle">Klar til scanning</small></div>
           <div><button id="backToMain" class="ghost">Tilbage</button></div>
         </div>
         <div class="items" id="itemsList">
@@ -346,8 +351,16 @@
       const packTbody = document.getElementById('packTbody');
       const exportReportBtn = document.getElementById('exportReportBtn');
 
+      const editBanner = document.getElementById('editBanner');
+      const initTitle = document.getElementById('initTitle');
+      const initSubtitle = document.getElementById('initSubtitle');
+
       let stream = null, scanning = false, lastFound = null;
       let items = [];
+      // State der holder styr på om vi redigerer en eksisterende rapport
+      let editingReportId = null;
+      let editingReportCreated = null;
+      let editingReportTitle = null;
       const STORAGE_KEY = 'qr_reports_v1';
 
       function formatDateDMY(date){ const d=String(date.getDate()).padStart(2,'0'); const m=String(date.getMonth()+1).padStart(2,'0'); const y=date.getFullYear(); return `${d}/${m}/${y}`; }
@@ -384,6 +397,16 @@
       }
       monthCheckbox.addEventListener('change', setMonthVisibility);
 
+      // Nulstil edit-state og UI til "ny rapport"
+      function resetEditState(){
+        editingReportId = null;
+        editingReportCreated = null;
+        editingReportTitle = null;
+        editBanner.style.display = 'none';
+        initTitle.textContent = 'Ny rapport';
+        initSubtitle.textContent = 'Klar til scanning';
+      }
+
       function loadReports(){ 
         reportsList.innerHTML=''; 
         const saved=JSON.parse(localStorage.getItem(STORAGE_KEY)||'[]'); 
@@ -399,6 +422,12 @@
             pdfBtn.textContent = 'PDF';
             pdfBtn.onclick = (e) => { e.stopPropagation(); generateAndSharePDF(rep); }
 
+            // Ny "Ret"-knap
+            const editBtn = document.createElement('button');
+            editBtn.className = 'ghost edit-icon';
+            editBtn.textContent = 'Ret';
+            editBtn.onclick = (e) => { e.stopPropagation(); editReport(rep.id); }
+
             const delBtn = document.createElement('button');
             delBtn.className = 'ghost';
             delBtn.style.color = '#c00';
@@ -406,6 +435,7 @@
             delBtn.onclick = (e) => { e.stopPropagation(); deleteReport(rep.id); }
 
             btnWrap.appendChild(pdfBtn);
+            btnWrap.appendChild(editBtn);
             btnWrap.appendChild(delBtn);
 
             const textWrap = document.createElement('div');
@@ -425,6 +455,28 @@
         saved=saved.filter(r=>r.id!==id); 
         localStorage.setItem(STORAGE_KEY,JSON.stringify(saved)); 
         loadReports(); 
+      };
+
+      // Indlæs en gemt rapport tilbage i redigeringsvinduet
+      window.editReport = function(id){
+        const saved = JSON.parse(localStorage.getItem(STORAGE_KEY)||'[]');
+        const rep = saved.find(r => r.id === id);
+        if(!rep) return;
+
+        // Kopier varerne ind i arbejdslisten (deep copy så vi ikke ændrer i den gemte direkte)
+        items = JSON.parse(JSON.stringify(rep.items || []));
+        editingReportId = rep.id;
+        editingReportCreated = rep.created;
+        editingReportTitle = rep.title;
+
+        // Opdater UI til redigeringstilstand
+        editBanner.style.display = 'block';
+        initTitle.textContent = 'Redigér: ' + rep.title;
+        initSubtitle.textContent = 'Du redigerer en eksisterende rapport';
+
+        renderItems();
+        mainScreen.style.display = 'none';
+        initView.style.display = 'block';
       };
 
       function renderItems(){ 
@@ -723,8 +775,17 @@
       }
 
       // Bindings
-      document.getElementById('newListBtn').addEventListener('click', ()=> { items=[]; renderItems(); mainScreen.style.display='none'; initView.style.display='block'; });
-      document.getElementById('backToMain').addEventListener('click', ()=> { initView.style.display='none'; mainScreen.style.display='block'; });
+      document.getElementById('newListBtn').addEventListener('click', ()=> { items=[]; resetEditState(); renderItems(); mainScreen.style.display='none'; initView.style.display='block'; });
+      document.getElementById('backToMain').addEventListener('click', ()=> {
+        // Hvis brugeren er i gang med at redigere, så bekræft annullering
+        if(editingReportId){
+          if(!confirm('Vil du annullere redigeringen? Ændringer gemmes ikke.')) return;
+        }
+        resetEditState();
+        items = [];
+        initView.style.display='none';
+        mainScreen.style.display='block';
+      });
       
       document.getElementById('openScannerBtn').addEventListener('click', ()=>{ 
         scannerModal.style.display='flex'; foundArea.style.display='none'; 
@@ -757,9 +818,31 @@
       document.getElementById('saveReportBtn').addEventListener('click', ()=>{ 
         if(!items.length && !confirm('Gem tom liste?')) return;
         const saved=JSON.parse(localStorage.getItem(STORAGE_KEY)||'[]'); 
-        saved.push({ id:'r_'+Date.now(), title:'Liste '+formatDateDMY(new Date()), created:Date.now(), items:items }); 
-        localStorage.setItem(STORAGE_KEY,JSON.stringify(saved)); 
-        alert('Gemt'); items=[]; renderItems(); initView.style.display='none'; mainScreen.style.display='block'; loadReports(); 
+
+        if(editingReportId){
+          // Overskriv eksisterende rapport - behold original id, dato og titel
+          const idx = saved.findIndex(r => r.id === editingReportId);
+          if(idx !== -1){
+            saved[idx] = {
+              id: editingReportId,
+              title: editingReportTitle,
+              created: editingReportCreated,
+              items: items
+            };
+          } else {
+            // Hvis rapporten ikke længere findes (f.eks. slettet i anden tab), gem som ny
+            saved.push({ id:'r_'+Date.now(), title:'Liste '+formatDateDMY(new Date()), created:Date.now(), items:items });
+          }
+          localStorage.setItem(STORAGE_KEY,JSON.stringify(saved));
+          alert('Rapport opdateret');
+        } else {
+          // Ny rapport
+          saved.push({ id:'r_'+Date.now(), title:'Liste '+formatDateDMY(new Date()), created:Date.now(), items:items });
+          localStorage.setItem(STORAGE_KEY,JSON.stringify(saved));
+          alert('Gemt');
+        }
+
+        items=[]; resetEditState(); renderItems(); initView.style.display='none'; mainScreen.style.display='block'; loadReports();
       });
 
       loadReports();
