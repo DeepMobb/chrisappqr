@@ -367,25 +367,66 @@
       function escapeHtml(text){ if(typeof text!=='string') text=String(text); return text.replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
       
       function parseQRFields(qrtext){ 
-        const fields={varenummer:'',materiale:'',område:'',lager:'',reol:'',hylde:'',antal_raw:'',enhed:'', plads:''}; 
+        // Interne felter: de "gamle" felter bruges fortsat til visning i app og PDF.
+        // De øvrige felter (materiale_info, længde, bredde, tykkelse, vægt, længde_m,
+        // areal_m2, anden_info, kemi) gemmes internt på vare-objektet men vises ikke i UI endnu.
+        const fields={
+            varenummer:'', materiale:'', område:'', lager:'', reol:'', hylde:'',
+            antal_raw:'', enhed:'', plads:'',
+            materiale_info:'', længde:'', bredde:'', tykkelse:'', vægt:'',
+            længde_m:'', areal_m2:'', anden_info:'', kemi:''
+        }; 
         if(!qrtext) return fields; 
+
+        // Mapping fra QR-nøgle (lowercased) til internt feltnavn.
+        // Understøtter både de nye korte forkortelser og de gamle lange navne (bagudkompatibilitet).
+        const keyMap = {
+            // Nye korte forkortelser
+            'o':   'område',
+            'vn':  'varenummer',
+            'ma':  'materiale',
+            'mi':  'materiale_info',
+            'a':   'antal',
+            'l':   'længde',
+            'b':   'bredde',
+            't':   'tykkelse',
+            'v':   'vægt',
+            'm':   'længde_m',
+            'a2':  'areal_m2',
+            'ai':  'anden_info',
+            'lo':  'lager',
+            're':  'reol',
+            'hy':  'hylde',
+            'pl':  'plads',
+            'ke':  'kemi',
+            // Gamle lange navne (bagudkompatibel)
+            'varenummer':    'varenummer',
+            'materiale':     'materiale',
+            'område':        'område',
+            'lager':         'lager',
+            'lager/område':  'lager',
+            'plads':         'plads',
+            'reol':          'reol',
+            'hylde':         'hylde',
+            'antal':         'antal'
+        };
+
         const lines=String(qrtext).replace(/\r/g,'').split('\n'); 
         lines.forEach(line=>{ 
             const parts=line.split(':'); if(parts.length<2) return;
             const k=parts[0].trim().toLowerCase(); 
             const v=parts.slice(1).join(':').trim(); 
-            if(k==='varenummer') fields.varenummer=v; 
-            else if(k==='materiale') fields.materiale=v; 
-            else if(k==='område') fields.område=v; 
-            else if(k==='lager' || k==='lager/område') fields.lager=v; 
-            else if(k==='plads') fields.plads=v; 
-            else if(k==='reol') fields.reol=v; 
-            else if(k==='hylde') fields.hylde=v; 
-            else if(k==='antal'){ 
+            const target = keyMap[k];
+            if(!target) return;
+
+            if(target === 'antal'){
+                // Bevar eksisterende logik for antal/enhed
                 fields.antal_raw=v; 
                 const m=v.match(/^\s*([0-9]+(?:[.,][0-9]+)?)(?:\s+(.*))?$/); 
                 if(m) fields.enhed=(m[2]||'').trim(); else fields.enhed=v; 
-            } 
+            } else {
+                fields[target]=v;
+            }
         }); 
         return fields; 
       }
