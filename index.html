@@ -301,6 +301,30 @@
       </div>
     </div>
 
+    <div id="editQtyModal" class="modal" style="display:none; background:rgba(0,0,0,0.5);">
+      <div class="report-modal" style="max-width:500px; padding:24px;">
+        <div style="margin-bottom: 20px; border-bottom: 1px solid #eee; padding-bottom:10px;">
+            <div style="font-weight:800; font-size:22px; color:var(--dark);">Ret antal</div>
+            <div id="editQtyVareInfo" style="color:#777; font-size:14px; margin-top:4px;"></div>
+        </div>
+
+        <div style="margin-bottom:20px;">
+            <label style="font-size:14px; font-weight:700; display:block; margin-bottom:8px; color:#333;">Antal stk.</label>
+            <input id="editQtyInput" class="num-input" type="number" min="0" step="1" inputmode="numeric">
+        </div>
+
+        <div id="editMonthQtyRow" style="display:none; margin-bottom:20px;">
+            <label style="font-size:14px; font-weight:700; display:block; margin-bottom:8px; color:#333;">Månedsantal</label>
+            <input id="editMonthQtyInput" class="num-input" type="number" min="0" step="1" inputmode="numeric">
+        </div>
+
+        <div class="controls" style="margin-top:10px; padding-top:20px;">
+            <button id="editQtyCancelBtn" class="danger" style="height: 56px;">Annuller</button>
+            <button id="editQtySaveBtn" class="primary" style="height: 56px;">Gem</button>
+        </div>
+      </div>
+    </div>
+
     <div class="error-banner" id="errorBanner"></div>
     <canvas id="hiddenCanvas" style="display:none;"></canvas>
   </div>
@@ -533,25 +557,53 @@
         }); 
       }
       window.removeItem=function(idx){ items.splice(idx,1); renderItems(); };
+
+      // --- Rediger antal via in-app modal ---
+      const editQtyModal = document.getElementById('editQtyModal');
+      const editQtyVareInfo = document.getElementById('editQtyVareInfo');
+      const editQtyInput = document.getElementById('editQtyInput');
+      const editMonthQtyRow = document.getElementById('editMonthQtyRow');
+      const editMonthQtyInput = document.getElementById('editMonthQtyInput');
+      const editQtySaveBtn = document.getElementById('editQtySaveBtn');
+      const editQtyCancelBtn = document.getElementById('editQtyCancelBtn');
+      let editingItemIdx = null;
+
       window.editItemQty=function(idx){
         const it = items[idx]; if(!it) return;
-        // Ret antal
-        const newQtyStr = prompt('Ret antal for ' + (it.varenummer || 'vare') + ':', it.qty);
-        if(newQtyStr === null) return; // Brugeren annullerede
-        const newQty = parseInt(newQtyStr, 10);
+        editingItemIdx = idx;
+        editQtyVareInfo.textContent = (it.varenummer || 'Vare') + (it.materiale ? ' — ' + it.materiale : '');
+        editQtyInput.value = it.qty;
+        if(it.inMonthReport){
+          editMonthQtyRow.style.display = 'block';
+          editMonthQtyInput.value = it.monthQty;
+        } else {
+          editMonthQtyRow.style.display = 'none';
+        }
+        editQtyModal.style.display = 'flex';
+        // Fokuser og marker antal-feltet så brugeren straks kan rette
+        setTimeout(() => { editQtyInput.focus(); editQtyInput.select(); }, 50);
+      };
+
+      editQtyCancelBtn.addEventListener('click', () => {
+        editQtyModal.style.display = 'none';
+        editingItemIdx = null;
+      });
+
+      editQtySaveBtn.addEventListener('click', () => {
+        if(editingItemIdx === null) return;
+        const it = items[editingItemIdx]; if(!it){ editQtyModal.style.display='none'; return; }
+        const newQty = parseInt(editQtyInput.value, 10);
         if(isNaN(newQty) || newQty < 0){ alert('Ugyldigt antal'); return; }
         it.qty = newQty;
-        // Ret månedsantal hvis varen er markeret til månedsrapport
         if(it.inMonthReport){
-          const newMonthStr = prompt('Ret månedsantal for ' + (it.varenummer || 'vare') + ':', it.monthQty);
-          if(newMonthStr !== null){
-            const newMonth = parseInt(newMonthStr, 10);
-            if(!isNaN(newMonth) && newMonth >= 0){ it.monthQty = newMonth; }
-            else { alert('Ugyldigt månedsantal - kun antal er opdateret'); }
-          }
+          const newMonth = parseInt(editMonthQtyInput.value, 10);
+          if(isNaN(newMonth) || newMonth < 0){ alert('Ugyldigt månedsantal'); return; }
+          it.monthQty = newMonth;
         }
+        editQtyModal.style.display = 'none';
+        editingItemIdx = null;
         renderItems();
-      };
+      });
 
       function addOrAggregateItem(rawData, qtyToAdd, monthQtyToAdd, monthUnit, isMonthChecked){ 
         const key=itemKeyFromRaw(rawData); 
