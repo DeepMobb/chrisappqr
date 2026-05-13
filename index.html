@@ -528,11 +528,30 @@
             const realIdx = items.length - 1 - idx;
             const title=[it.varenummer,it.materiale].filter(Boolean).join(' — '); 
             const el=document.createElement('div'); el.className='item'; 
-            el.innerHTML=`<div style="flex:1"><div style="font-weight:600">${escapeHtml(title)}</div><div style="font-size:12px;color:#777">Område: ${escapeHtml(it.område||'')}</div></div><div class="qty-badge">${it.qty}${it.inMonthReport?'<br><span style="font-size:9px">M:'+it.monthQty+(it.monthUnit?` ${it.monthUnit}`:'')+'</span>':''}</div><button class="ghost" style="color:#c00" onclick="removeItem(${realIdx})">✕</button>`; 
+            el.innerHTML=`<div style="flex:1"><div style="font-weight:600">${escapeHtml(title)}</div><div style="font-size:12px;color:#777">Område: ${escapeHtml(it.område||'')}</div></div><div class="qty-badge" style="cursor:pointer;" title="Klik for at rette antal" onclick="editItemQty(${realIdx})">${it.qty}${it.inMonthReport?'<br><span style="font-size:9px">M:'+it.monthQty+(it.monthUnit?` ${it.monthUnit}`:'')+'</span>':''}</div><button class="ghost" style="color:#c00" onclick="removeItem(${realIdx})">✕</button>`; 
             itemsList.appendChild(el); 
         }); 
       }
       window.removeItem=function(idx){ items.splice(idx,1); renderItems(); };
+      window.editItemQty=function(idx){
+        const it = items[idx]; if(!it) return;
+        // Ret antal
+        const newQtyStr = prompt('Ret antal for ' + (it.varenummer || 'vare') + ':', it.qty);
+        if(newQtyStr === null) return; // Brugeren annullerede
+        const newQty = parseInt(newQtyStr, 10);
+        if(isNaN(newQty) || newQty < 0){ alert('Ugyldigt antal'); return; }
+        it.qty = newQty;
+        // Ret månedsantal hvis varen er markeret til månedsrapport
+        if(it.inMonthReport){
+          const newMonthStr = prompt('Ret månedsantal for ' + (it.varenummer || 'vare') + ':', it.monthQty);
+          if(newMonthStr !== null){
+            const newMonth = parseInt(newMonthStr, 10);
+            if(!isNaN(newMonth) && newMonth >= 0){ it.monthQty = newMonth; }
+            else { alert('Ugyldigt månedsantal - kun antal er opdateret'); }
+          }
+        }
+        renderItems();
+      };
 
       function addOrAggregateItem(rawData, qtyToAdd, monthQtyToAdd, monthUnit, isMonthChecked){ 
         const key=itemKeyFromRaw(rawData); 
