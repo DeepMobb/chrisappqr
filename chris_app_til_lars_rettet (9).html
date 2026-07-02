@@ -1,0 +1,1175 @@
+<!doctype html>
+<html lang="da">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>Opfyldningsliste</title>
+
+  <script>
+    window.startNewList = function(){
+      try {
+        if (window._appStartNewList) return window._appStartNewList();
+        const main = document.getElementById('mainScreen');
+        const init = document.getElementById('initView');
+        if (main && init) {
+          main.style.display = 'none';
+          init.style.display = 'block';
+        } else {
+          window._pendingNewList = true;
+        }
+      } catch (e) { console.warn(e); }
+    };
+  </script>
+
+  <style>
+    :root{
+      --bg:#F5F5F5; --accent:#C82333; --dark:#111; --white:#fff; --muted:#777; --card:#fff;
+      font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, Arial;
+    }
+    * { box-sizing: border-box; }
+    html,body{height:100%;margin:0;background:linear-gradient(180deg,var(--bg),#eee);color:var(--dark);}
+    .app{max-width:800px;margin:0 auto;padding:16px; padding-bottom: 100px;} 
+    
+    header{display:flex;align-items:center;gap:12px;margin-bottom:18px;}
+    .logo-img{width:50px;height:50px;border-radius:10px;object-fit:cover;box-shadow:0 4px 12px rgba(0,0,0,0.1);}
+    h1{margin:0;font-size:18px} p.lead{margin:0;color:var(--muted);font-size:13px}
+    
+    .card{background:var(--card);border-radius:12px;padding:16px;box-shadow:0 4px 12px rgba(0,0,0,0.05); margin-bottom: 12px;}
+    
+    /* KNAP DESIGN */
+    button { cursor:pointer; font-family:inherit; border:none; outline:none; -webkit-tap-highlight-color: transparent; font-size: 16px; font-weight: 600; padding: 14px 20px; border-radius: 12px; transition: opacity 0.2s; display: inline-flex; align-items: center; justify-content: center; }
+    button:active { opacity: 0.8; }
+
+    .primary, .save-btn { background:var(--accent); color:var(--white); width: 100%; box-shadow: 0 4px 12px rgba(200,35,51,0.2); }
+    .danger { background: #ffebee; color: #c62828; width: 100%; }
+    .ghost { background: transparent; color: var(--muted); padding: 8px 12px; width: auto; font-size: 14px; }
+    
+    /* Ikon farver */
+    .ghost.pdf-icon { color: #D32F2F; font-weight: 700; }
+    .ghost.edit-icon { color: #1976D2; font-weight: 700; }
+    
+    .fab { width:64px; height:64px; flex:0 0 64px; border-radius:12px; background:var(--dark); color:var(--white); font-size: 26px; box-shadow: 0 4px 12px rgba(0,0,0,0.2); padding:0; display:flex; align-items:center; justify-content:center; line-height:1; text-align:center; }
+
+    .save-btn{position:static;bottom:auto;z-index:20; margin-left:0; height:64px; border-radius:12px; background:linear-gradient(90deg,var(--accent),#b71f2a);}
+    
+    .muted-note{color:var(--muted);font-size:13px;}
+    .reports{margin-top:14px;display:flex;flex-direction:column;gap:10px;}
+    .report-item{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;border-radius:10px;background:#fff;border:1px solid rgba(0,0,0,0.05);}
+    
+    /* Nye stilarter til at gøre rapport-titlen klikbar */
+    .report-title-link { flex: 1; cursor: pointer; text-align: left; padding: 4px 0; }
+    .report-title-link:active { opacity: 0.7; }
+    
+    .items{min-height:220px;border-radius:10px;padding:12px;background:#fff;border:1px dashed #ccc;overflow:auto;}
+    .item{display:flex;gap:12px;align-items:center;padding:8px;border-radius:8px;border-bottom:1px solid #eee;}
+    .qty-badge{background:#f3f3f3;border-radius:8px;padding:6px 10px;font-weight:700;color:var(--dark);text-align:center;min-width:40px;}
+    .month-badge{background:#fff;border-radius:4px;padding:2px 6px;font-size:10px;border:1px solid #ddd;display:block;margin-top:4px;color:#333;}
+    .toolbar{display:grid;grid-template-columns:64px 1fr;gap:12px;margin-bottom:12px;align-items:center;}
+
+    /* Banner der viser at man er i redigeringstilstand */
+    .edit-banner { background: #E3F2FD; color: #1565C0; padding: 10px 14px; border-radius: 10px; margin-bottom: 12px; font-size: 14px; font-weight: 600; border: 1px solid #BBDEFB; display: none; }
+    
+    /* MODAL & SCANNER */
+    .modal{position:fixed;left:0;top:0;right:0;bottom:0;display:flex;align-items:center;justify-content:center;z-index:120;background:rgba(0,0,0,0.95);}
+    #reportModalWrap { background: rgba(255, 255, 255, 0.95); } /* Gør rapportbaggrunden hvid */
+    
+    .scanner{width:100%; height:100%; display:flex; flex-direction:column; position:relative;}
+    
+    .video-wrap{ width: 100%; height: 100%; background:#000; position: relative; overflow: hidden; }
+    video { width: 100%; height: 100%; object-fit: cover; }
+    
+    .scan-box {
+      position: absolute; width: 70%; max-width: 300px; aspect-ratio: 1/1;
+      top: 50%; left: 50%; transform: translate(-50%, -50%);
+      border-radius: 20px; border: 2px solid rgba(255,255,255,0.8);
+      box-shadow: 0 0 0 100vmax rgba(0,0,0,0.5); z-index: 10; pointer-events: none;
+    }
+    /* Rød scannelinje fjernet - selve scannerboksen beholdes */
+    .scan-line{display:none;}
+
+    /* --- FULD SKÆRM RESULTAT & SCROLL --- */
+    #foundArea {
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 2000;
+        background: #ffffff; display: none; flex-direction: column;
+        overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 24px;
+    }
+    .found-content { max-width: 600px; margin: 0 auto; width: 100%; padding-bottom: 100px; }
+    .scan-form-grid{display:grid; grid-template-columns: 1fr 1fr; gap:16px; align-items:end; margin-top:30px;}
+    .month-form-grid{display:grid; grid-template-columns: 1fr 1fr; gap:16px; align-items:end;}
+    .scan-field{display:flex; flex-direction:column;}
+    .scan-field label{font-size:14px; font-weight:700; display:block; margin-bottom:8px; color:#333; line-height:1.2; min-height:17px;}
+    .toggle-spacer{display:none;}
+    .month-toggle-field{grid-column:1 / -1;}
+    label.month-toggle{
+        height:54px !important;
+        display:grid !important;
+        grid-template-columns:24px auto;
+        align-items:center !important;
+        justify-content:start;
+        column-gap:10px;
+        cursor:pointer; background:#fff; border:2px solid #eee; padding:0 20px !important; border-radius:12px; width:100%;
+        margin:0 !important;
+    }
+    label.month-toggle input{width:24px; height:24px; margin:0 !important; display:block; align-self:center; justify-self:center;}
+    label.month-toggle span{display:block !important; height:auto; margin:0 !important; font-size:16px; font-weight:700; line-height:1; white-space:nowrap; align-self:center;}
+    .controls{display:grid; grid-template-columns: 1fr 1fr; gap:16px; margin-top:30px; padding-top:20px; border-top:1px solid #eee;}
+    
+    .num-input, .num-input-month, .unit-select {
+        width:100%; padding:14px; border-radius:12px; border:1px solid #ddd; 
+        font-size: 20px; text-align: center; font-weight:700; background:#f9f9f9; color: #333; height: 54px; 
+    }
+    .unit-select {
+        text-align-last: center; appearance: none;
+        background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23333%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E");
+        background-repeat: no-repeat; background-position: right 12px top 50%; background-size: 12px auto;
+    }
+
+    @media (max-width: 480px){
+        .scan-form-grid, .month-form-grid{grid-template-columns: 1fr;}
+        .scan-field.month-toggle-field{grid-column: 1 / -1;}
+    }
+
+    .report-modal{width:95%; max-width:1000px; background:var(--card); border-radius:12px; padding:14px; max-height:90vh; overflow:auto; box-shadow: 0 10px 30px rgba(0,0,0,0.1);}
+    table.rtable{width:100%;border-collapse:collapse;margin-top:8px;}
+    table.rtable th, table.rtable td{padding:10px;border-bottom:1px solid rgba(0,0,0,0.06);text-align:left;font-size:13px;vertical-align:middle;}
+    table.rtable th{background:#e0e0e0; font-weight:700; color:var(--dark); border-bottom: 2px solid #ccc;}
+    .area-row { background:#f5f5f5; font-weight:700; }
+    
+    .error-banner { position:fixed; left:16px; right:16px; bottom:16px; background:#ffefef; color:#b00000; border:1px solid #b00000; padding:10px 12px; border-radius:8px; z-index:200; display:none;}
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <img src="logo.png" alt="Logo" class="logo-img" onerror="this.style.display='none'" />
+      <div>
+        <h1>Opfyldningsliste</h1>
+        <p class="lead">Udviklet i Vamdrup</p>
+      </div>
+    </header>
+
+    <section id="mainScreen" class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <div>
+          <h2 style="margin:0 0 6px 0;">Velkommen</h2>
+          <div class="muted-note">Dine gemte lister</div>
+        </div>
+        <div><button id="newListBtn" class="primary">Ny liste</button></div>
+      </div>
+      <div class="reports" id="reportsList" style="margin-top:16px;"></div>
+    </section>
+
+    <section id="initView" style="display:none;margin-top:16px;">
+      <div class="card">
+        <div id="editBanner" class="edit-banner">✏️ Du redigerer en eksisterende rapport</div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+          <div><h3 id="initTitle" style="margin:0;">Ny rapport</h3><small class="muted-note" id="initSubtitle">Klar til scanning</small></div>
+          <div><button id="backToMain" class="ghost">Tilbage</button></div>
+        </div>
+        <div class="toolbar">
+          <button id="openScannerBtn" class="fab" title="Scan QR">📷</button>
+          <button id="saveReportBtn" class="save-btn">Gem rapport</button>
+        </div>
+        <div class="items" id="itemsList">
+           <div class="muted-note" style="padding:20px; text-align:center;">Listen er tom.<br>Tryk på kameraet for at starte.</div>
+        </div>
+      </div>
+    </section>
+
+    <div id="scannerModal" class="modal" style="display:none;">
+      <div class="scanner">
+        
+        <div style="position:absolute; top:20px; right:20px; z-index:20;">
+           <button id="closeScanner" style="background:rgba(0,0,0,0.5); color:white; padding:10px 20px; border-radius:30px; font-size:14px; border:1px solid rgba(255,255,255,0.3);">Luk Scanner</button>
+        </div>
+
+        <div class="video-wrap">
+          <video id="video" autoplay muted playsinline></video>
+          <div class="scan-box" id="scanBoxOverlay"></div>
+        </div>
+
+        <div id="foundArea" style="display:none;">
+          <div class="found-content">
+            
+            <div style="margin-bottom: 20px; border-bottom: 1px solid #eee; padding-bottom:10px;">
+                <div style="font-weight:800; font-size:24px; color:var(--dark);">Fundet vare! 🎉</div>
+                <div style="color:#777; font-size:14px;">Bekræft venligst data nedenfor</div>
+            </div>
+
+            <div style="font-weight:600; font-size:13px; text-transform:uppercase; color:#888; margin-bottom:6px;">Scannet tekst</div>
+            <div id="foundText" style="word-break:break-word; color:#111; font-weight:500; font-size:16px; margin-bottom:30px; line-height:1.5; background:#f0f0f0; padding:12px; border-radius:8px;"></div>
+
+            <div class="scan-form-grid">
+               <div class="scan-field">
+                   <label for="qtyInput">Antal</label>
+                   <input id="qtyInput" class="num-input" type="number" min="0" step="1" value="1" inputmode="numeric">
+               </div>
+               <div class="scan-field">
+                   <label for="qtyUnitSelect">Enhed til antal</label>
+                   <select id="qtyUnitSelect" class="unit-select">
+                       <option value="STK">STK</option>
+                       <option value="RULL">RULL</option>
+                       <option value="KS">KS</option>
+                       <option value="PL">PL</option>
+                       <option value="Dunke">Dunke</option>
+                       <option value="m2">m2</option>
+                   </select>
+               </div>
+               <div class="scan-field month-toggle-field">
+                  <span class="toggle-spacer">Månedsrapport</span>
+                  <label class="month-toggle" for="monthCheckbox">
+                    <input id="monthCheckbox" type="checkbox" />
+                    <span>Månedsrapport</span>
+                  </label>
+               </div>
+            </div>
+
+            <div id="monthInputRow" style="display:none; margin-top:24px;">
+               <div class="month-form-grid">
+                   <div class="scan-field">
+                       <label for="monthQtyInput">Antal til måned</label>
+                       <input id="monthQtyInput" class="num-input-month" type="number" min="0" step="1" value="" placeholder="0" inputmode="numeric" />
+                   </div>
+                   <div class="scan-field">
+                       <label for="monthUnitSelect">Enhed til måned</label>
+                       <select id="monthUnitSelect" class="unit-select">
+                           <option value="STK">STK</option>
+                           <option value="RULL">RULL</option>
+                           <option value="KS">KS</option>
+                           <option value="PL">PL</option>
+                           <option value="Dunke">Dunke</option>
+                           <option value="m2">m2</option>
+                       </select>
+                   </div>
+               </div>
+            </div>
+
+            <div class="controls">
+              <button id="declineBtn" class="danger" style="height: 60px;">Afvis</button>
+              <button id="acceptBtn" class="primary" style="height: 60px;">Accepter</button>
+            </div>
+
+            <div style="text-align:center; margin-top:15px; color:#999; font-size:12px;">
+                Scroll ned hvis du ikke kan se knapperne
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <div id="reportModalWrap" class="modal" style="display:none;">
+      <div class="report-modal">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;">
+          <div>
+            <div id="reportTitle" style="font-weight:700;">Rapport</div>
+            <div id="reportMeta" class="muted-note" style="font-size:13px;margin-top:4px;"></div>
+          </div>
+          <div style="display:flex;gap:8px;">
+            <button id="exportReportBtn" class="ghost pdf-icon">PDF (Mail)</button>
+            <button id="closeReportModal" class="ghost">Luk</button>
+          </div>
+        </div>
+
+        <div style="margin-top:12px;">
+          <h3 style="margin:6px 0 8px 0;">Opfyldningsliste</h3>
+          <div id="opfy_table_wrap">
+            <table class="rtable" id="opfyTable">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Område</th>
+                  <th>Varenummer</th>
+                  <th>Materiale</th>
+                  <th>Lager/område</th>
+                  <th>Plads</th>
+                  <th>Antal</th>
+                  <th>Enhed</th>
+                </tr>
+              </thead>
+              <tbody id="opfyTbody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div style="margin-top:18px;">
+          <h3 style="margin:6px 0 8px 0;">Pakkeliste <span style="font-size:12px; font-weight:normal; color:#777;">(Sammentalt)</span></h3>
+          <div id="pack_table_wrap">
+            <table class="rtable" id="packTable">
+               <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Varenummer</th>
+                  <th>Materiale</th>
+                  <th>Samlet Antal</th>
+                  <th>Enhed</th>
+                </tr>
+              </thead>
+              <tbody id="packTbody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div style="margin-top:18px;">
+          <h3 style="margin:6px 0 8px 0;">Månedsoptælling</h3>
+          <div id="month_table_wrap">
+            <table class="rtable" id="monthTable">
+               <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Område</th>
+                  <th>Varenummer</th>
+                  <th>Materiale</th>
+                  <th>Månedsantal</th>
+                  <th>Enhed</th>
+                </tr>
+              </thead>
+              <tbody id="monthTbody"></tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <div id="editQtyModal" class="modal" style="display:none; background:rgba(0,0,0,0.5);">
+      <div class="report-modal" style="max-width:500px; padding:24px;">
+        <div style="margin-bottom: 20px; border-bottom: 1px solid #eee; padding-bottom:10px;">
+            <div style="font-weight:800; font-size:22px; color:var(--dark);">Ret antal og enhed</div>
+            <div id="editQtyVareInfo" style="color:#777; font-size:14px; margin-top:4px;"></div>
+        </div>
+
+        <div style="display:flex; gap:16px; margin-bottom:20px;">
+            <div style="flex:1;">
+                <label style="font-size:14px; font-weight:700; display:block; margin-bottom:8px; color:#333;">Antal stk.</label>
+                <input id="editQtyInput" class="num-input" type="number" min="0" step="1" inputmode="numeric">
+            </div>
+            <div style="flex:1;">
+                <label style="font-size:14px; font-weight:700; display:block; margin-bottom:8px; color:#333;">Enhed til antal</label>
+                <select id="editUnitSelect" class="unit-select">
+                    <option value="STK">STK</option>
+                    <option value="RULL">RULL</option>
+                    <option value="KS">KS</option>
+                    <option value="PL">PL</option>
+                    <option value="Dunke">Dunke</option>
+                    <option value="m2">m2</option>
+                </select>
+            </div>
+        </div>
+
+        <div id="editMonthQtyRow" style="display:none; margin-bottom:20px;">
+            <div style="display:flex; gap:16px;">
+                <div style="flex:1;">
+                    <label style="font-size:14px; font-weight:700; display:block; margin-bottom:8px; color:#333;">Månedsantal</label>
+                    <input id="editMonthQtyInput" class="num-input" type="number" min="0" step="1" inputmode="numeric">
+                </div>
+                <div style="flex:1;">
+                    <label style="font-size:14px; font-weight:700; display:block; margin-bottom:8px; color:#333;">Månedsenhed</label>
+                    <select id="editMonthUnitSelect" class="unit-select">
+                        <option value="STK">STK</option>
+                        <option value="RULL">RULL</option>
+                        <option value="KS">KS</option>
+                        <option value="PL">PL</option>
+                        <option value="Dunke">Dunke</option>
+                        <option value="m2">m2</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div class="controls" style="margin-top:10px; padding-top:20px;">
+            <button id="editQtyCancelBtn" class="danger" style="height: 56px;">Annuller</button>
+            <button id="editQtySaveBtn" class="primary" style="height: 56px;">Gem</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="error-banner" id="errorBanner"></div>
+    <canvas id="hiddenCanvas" style="display:none;"></canvas>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+
+  <script>
+    const errorBanner = document.getElementById('errorBanner');
+    function showError(msg){ console.error(msg); errorBanner.textContent = typeof msg === 'string' ? msg : (msg && msg.message ? msg.message : 'Fejl'); errorBanner.style.display='block'; setTimeout(()=>errorBanner.style.display='none',5000); }
+
+    window.startNewList = function(){
+      try {
+        const main = document.getElementById('mainScreen');
+        const init = document.getElementById('initView');
+        if (main && init) { main.style.display='none'; init.style.display='block'; }
+      } catch (err) { showError(err); }
+    };
+
+    document.addEventListener('DOMContentLoaded', () => { try { initApp(); } catch (err) { showError(err); } });
+
+    function initApp(){
+      const mainScreen = document.getElementById('mainScreen');
+      const initView = document.getElementById('initView');
+      const itemsList = document.getElementById('itemsList');
+      const reportsList = document.getElementById('reportsList');
+      const scannerModal = document.getElementById('scannerModal');
+      const video = document.getElementById('video');
+      const hiddenCanvas = document.getElementById('hiddenCanvas');
+      const foundArea = document.getElementById('foundArea');
+      const foundText = document.getElementById('foundText');
+      const acceptBtn = document.getElementById('acceptBtn');
+      const declineBtn = document.getElementById('declineBtn');
+      const scanBoxOverlay = document.getElementById('scanBoxOverlay');
+      
+      const qtyInput = document.getElementById('qtyInput');
+      const qtyUnitSelect = document.getElementById('qtyUnitSelect');
+      const monthCheckbox = document.getElementById('monthCheckbox');
+      const monthQtyInput = document.getElementById('monthQtyInput');
+      const monthUnitSelect = document.getElementById('monthUnitSelect');
+      const monthInputRow = document.getElementById('monthInputRow');
+
+      const reportModalWrap = document.getElementById('reportModalWrap');
+      const reportTitle = document.getElementById('reportTitle');
+      const reportMeta = document.getElementById('reportMeta');
+      const opfyTbody = document.getElementById('opfyTbody');
+      const monthTbody = document.getElementById('monthTbody');
+      const packTbody = document.getElementById('packTbody');
+      const exportReportBtn = document.getElementById('exportReportBtn');
+
+      const editBanner = document.getElementById('editBanner');
+      const initTitle = document.getElementById('initTitle');
+      const initSubtitle = document.getElementById('initSubtitle');
+
+      let stream = null, scanning = false, lastFound = null;
+      let ignoredScanData = null, ignoreScanUntil = 0;
+      let items = [];
+      // State der holder styr på om vi redigerer en eksisterende rapport
+      let editingReportId = null;
+      let editingReportCreated = null;
+      let editingReportTitle = null;
+      const STORAGE_KEY = 'qr_reports_v1';
+
+      function formatDateDMY(date){ const d=String(date.getDate()).padStart(2,'0'); const m=String(date.getMonth()+1).padStart(2,'0'); const y=date.getFullYear(); return `${d}/${m}/${y}`; }
+      function escapeHtml(text){ if(typeof text!=='string') text=String(text); return text.replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+      
+      function parseQRFields(qrtext){ 
+        // Interne felter: de "gamle" felter bruges fortsat til visning i app og PDF.
+        // De øvrige felter (materiale_info, længde, bredde, tykkelse, vægt, længde_m,
+        // areal_m2, anden_info, kemi) gemmes internt på vare-objektet men vises ikke i UI endnu.
+        const fields={
+            varenummer:'', materiale:'', område:'', lager:'', reol:'', hylde:'',
+            antal_raw:'', enhed:'', plads:'',
+            materiale_info:'', længde:'', bredde:'', tykkelse:'', vægt:'',
+            længde_m:'', areal_m2:'', anden_info:'', kemi:''
+        }; 
+        if(!qrtext) return fields; 
+
+        // Mapping fra QR-nøgle (lowercased) til internt feltnavn.
+        // Understøtter både de nye korte forkortelser og de gamle lange navne (bagudkompatibilitet).
+        const keyMap = {
+            // Nye korte forkortelser
+            'o':   'område',
+            'vn':  'varenummer',
+            'ma':  'materiale',
+            'mi':  'materiale_info',
+            'a':   'antal',
+            'l':   'længde',
+            'b':   'bredde',
+            't':   'tykkelse',
+            'v':   'vægt',
+            'm':   'længde_m',
+            'a2':  'areal_m2',
+            'ai':  'anden_info',
+            'lo':  'lager',
+            're':  'reol',
+            'hy':  'hylde',
+            'pl':  'plads',
+            'ke':  'kemi',
+            // Gamle lange navne (bagudkompatibel)
+            'varenummer':    'varenummer',
+            'materiale':     'materiale',
+            'område':        'område',
+            'lager':         'lager',
+            'lager/område':  'lager',
+            'plads':         'plads',
+            'reol':          'reol',
+            'hylde':         'hylde',
+            'antal':         'antal'
+        };
+
+        // Felter kan være adskilt af linjeskift (gammelt format) eller pipe '|' (nyt format).
+        const lines=String(qrtext).replace(/\r/g,'').split(/[\n|]/); 
+        lines.forEach(line=>{ 
+            const parts=line.split(':'); if(parts.length<2) return;
+            const k=parts[0].trim().toLowerCase(); 
+            const v=parts.slice(1).join(':').trim(); 
+            const target = keyMap[k];
+            if(!target) return;
+
+            if(target === 'antal'){
+                // Bevar eksisterende logik for antal/enhed
+                fields.antal_raw=v; 
+                const m=v.match(/^\s*([0-9]+(?:[.,][0-9]+)?)(?:\s*(.*))?$/); 
+                if(m) fields.enhed=(m[2]||'').trim(); else fields.enhed=v; 
+            } else {
+                fields[target]=v;
+            }
+        }); 
+        return fields; 
+      }
+      function itemKeyFromRaw(raw){ return raw; }
+
+      function setMonthVisibility(){ 
+        if(monthCheckbox.checked){ 
+          monthInputRow.style.display='block'; 
+          monthQtyInput.disabled=false; 
+          if(qtyUnitSelect) setSelectValue(monthUnitSelect, qtyUnitSelect.value || 'STK');
+        } 
+        else { monthInputRow.style.display='none'; monthQtyInput.disabled=true; monthQtyInput.value=''; } 
+      }
+      monthCheckbox.addEventListener('change', setMonthVisibility);
+
+      // Nulstil edit-state og UI til "ny rapport"
+      function resetEditState(){
+        editingReportId = null;
+        editingReportCreated = null;
+        editingReportTitle = null;
+        editBanner.style.display = 'none';
+        initTitle.textContent = 'Ny rapport';
+        initSubtitle.textContent = 'Klar til scanning';
+      }
+
+      function loadReports(){ 
+        reportsList.innerHTML=''; 
+        const saved=JSON.parse(localStorage.getItem(STORAGE_KEY)||'[]'); 
+        if(!saved.length){ reportsList.innerHTML='<div class="muted-note">Ingen gemte rapporter.</div>'; return; } 
+        saved.slice().reverse().forEach(rep=>{ 
+            const el=document.createElement('div'); el.className='report-item'; 
+            
+            const btnWrap = document.createElement('div');
+            btnWrap.style.cssText = "display:flex;gap:8px;";
+
+            const pdfBtn = document.createElement('button');
+            pdfBtn.className = 'ghost pdf-icon';
+            pdfBtn.textContent = 'PDF';
+            pdfBtn.onclick = (e) => { e.stopPropagation(); generateAndSharePDF(rep); }
+
+            // Ny "Ret"-knap
+            const editBtn = document.createElement('button');
+            editBtn.className = 'ghost edit-icon';
+            editBtn.textContent = 'Ret';
+            editBtn.onclick = (e) => { e.stopPropagation(); editReport(rep.id); }
+
+            const delBtn = document.createElement('button');
+            delBtn.className = 'ghost';
+            delBtn.style.color = '#c00';
+            delBtn.textContent = 'Slet';
+            delBtn.onclick = (e) => { e.stopPropagation(); deleteReport(rep.id); }
+
+            btnWrap.appendChild(pdfBtn);
+            btnWrap.appendChild(editBtn);
+            btnWrap.appendChild(delBtn);
+
+            const textWrap = document.createElement('div');
+            textWrap.className = 'report-title-link';
+            textWrap.onclick = () => openReport(rep.id);
+            textWrap.innerHTML=`<div style="font-weight:600">${escapeHtml(rep.title)}</div><small class="muted-note">${new Date(rep.created).toLocaleString()}</small>`;
+
+            el.appendChild(textWrap);
+            el.appendChild(btnWrap);
+            reportsList.appendChild(el); 
+        }); 
+      }
+      
+      window.deleteReport=function(id){ 
+        if(!confirm('Er du sikker på du vil slette denne rapport?')) return;
+        let saved=JSON.parse(localStorage.getItem(STORAGE_KEY)||'[]'); 
+        saved=saved.filter(r=>r.id!==id); 
+        localStorage.setItem(STORAGE_KEY,JSON.stringify(saved)); 
+        loadReports(); 
+      };
+
+      // Indlæs en gemt rapport tilbage i redigeringsvinduet
+      window.editReport = function(id){
+        const saved = JSON.parse(localStorage.getItem(STORAGE_KEY)||'[]');
+        const rep = saved.find(r => r.id === id);
+        if(!rep) return;
+
+        // Kopier varerne ind i arbejdslisten (deep copy så vi ikke ændrer i den gemte direkte)
+        items = JSON.parse(JSON.stringify(rep.items || []));
+        editingReportId = rep.id;
+        editingReportCreated = rep.created;
+        editingReportTitle = rep.title;
+
+        // Opdater UI til redigeringstilstand
+        editBanner.style.display = 'block';
+        initTitle.textContent = 'Redigér: ' + rep.title;
+        initSubtitle.textContent = 'Du redigerer en eksisterende rapport';
+
+        renderItems();
+        mainScreen.style.display = 'none';
+        initView.style.display = 'block';
+      };
+
+      function renderItems(){ 
+        itemsList.innerHTML=''; 
+        if(!items.length){ itemsList.innerHTML='<div class="muted-note" style="padding:20px; text-align:center;">Listen er tom.<br>Tryk på kameraet.</div>'; return; } 
+        items.slice().reverse().forEach((it, idx)=>{ 
+            const realIdx = items.length - 1 - idx;
+            const title=[it.varenummer,it.materiale].filter(Boolean).join(' — '); 
+            const qtyUnitText = `${it.qty}${it.enhed ? ' ' + escapeHtml(it.enhed) : ''}`;
+            const monthText = it.inMonthReport ? `<br><span style="font-size:9px">M:${it.monthQty}${it.monthUnit ? ' ' + escapeHtml(it.monthUnit) : ''}</span>` : '';
+            const el=document.createElement('div'); el.className='item'; 
+            el.innerHTML=`<div style="flex:1"><div style="font-weight:600">${escapeHtml(title)}</div><div style="font-size:12px;color:#777">Område: ${escapeHtml(it.område||'')}</div></div><div class="qty-badge" style="cursor:pointer;" title="Klik for at rette antal og enhed" onclick="editItemQty(${realIdx})">${qtyUnitText}${monthText}</div><button class="ghost" style="color:#c00" onclick="removeItem(${realIdx})">✕</button>`; 
+            itemsList.appendChild(el); 
+        }); 
+      }
+      window.removeItem=function(idx){ items.splice(idx,1); renderItems(); };
+
+      // --- Rediger antal via in-app modal ---
+      const editQtyModal = document.getElementById('editQtyModal');
+      const editQtyVareInfo = document.getElementById('editQtyVareInfo');
+      const editQtyInput = document.getElementById('editQtyInput');
+      const editUnitSelect = document.getElementById('editUnitSelect');
+      const editMonthQtyRow = document.getElementById('editMonthQtyRow');
+      const editMonthQtyInput = document.getElementById('editMonthQtyInput');
+      const editMonthUnitSelect = document.getElementById('editMonthUnitSelect');
+      const editQtySaveBtn = document.getElementById('editQtySaveBtn');
+      const editQtyCancelBtn = document.getElementById('editQtyCancelBtn');
+      let editingItemIdx = null;
+
+      function setSelectValue(select, value){
+        if(!select) return;
+        const val = (value || '').trim();
+        if(val && !Array.from(select.options).some(opt => opt.value === val)){
+          const option = document.createElement('option');
+          option.value = val;
+          option.textContent = val;
+          select.appendChild(option);
+        }
+        select.value = val || 'STK';
+      }
+
+      window.editItemQty=function(idx){
+        const it = items[idx]; if(!it) return;
+        editingItemIdx = idx;
+        editQtyVareInfo.textContent = (it.varenummer || 'Vare') + (it.materiale ? ' — ' + it.materiale : '');
+        editQtyInput.value = it.qty;
+        setSelectValue(editUnitSelect, it.enhed || 'STK');
+        if(it.inMonthReport){
+          editMonthQtyRow.style.display = 'block';
+          editMonthQtyInput.value = it.monthQty;
+          setSelectValue(editMonthUnitSelect, it.monthUnit || it.enhed || 'STK');
+        } else {
+          editMonthQtyRow.style.display = 'none';
+        }
+        editQtyModal.style.display = 'flex';
+        // Fokuser og marker antal-feltet så brugeren straks kan rette
+        setTimeout(() => { editQtyInput.focus(); editQtyInput.select(); }, 50);
+      };
+
+      editQtyCancelBtn.addEventListener('click', () => {
+        editQtyModal.style.display = 'none';
+        editingItemIdx = null;
+      });
+
+      editQtySaveBtn.addEventListener('click', () => {
+        if(editingItemIdx === null) return;
+        const it = items[editingItemIdx]; if(!it){ editQtyModal.style.display='none'; return; }
+        const newQty = parseInt(editQtyInput.value, 10);
+        if(isNaN(newQty) || newQty < 0){ alert('Ugyldigt antal'); return; }
+        it.qty = newQty;
+        it.enhed = editUnitSelect.value;
+        if(it.inMonthReport){
+          const newMonth = parseInt(editMonthQtyInput.value, 10);
+          if(isNaN(newMonth) || newMonth < 0){ alert('Ugyldigt månedsantal'); return; }
+          it.monthQty = newMonth;
+          it.monthUnit = editMonthUnitSelect.value;
+        }
+        editQtyModal.style.display = 'none';
+        editingItemIdx = null;
+        renderItems();
+      });
+
+      function addOrAggregateItem(rawData, qtyToAdd, unit, monthQtyToAdd, monthUnit, isMonthChecked){ 
+        const key=itemKeyFromRaw(rawData); 
+        const parsed=parseQRFields(rawData); 
+        const selectedUnit = unit || parsed.enhed || 'STK';
+        const existing=items.find(i=>i.key===key); 
+        if(existing){ 
+            existing.qty+=qtyToAdd; 
+            existing.enhed = selectedUnit;
+            existing.monthQty+=monthQtyToAdd; 
+            if(monthUnit) existing.monthUnit = monthUnit; 
+            if(isMonthChecked) existing.inMonthReport = true; 
+            existing._when=Date.now(); 
+        } 
+        else { 
+            items.push({ 
+                key, data:rawData, ...parsed,
+                qty:qtyToAdd, 
+                enhed: selectedUnit,
+                monthQty:monthQtyToAdd, 
+                monthUnit: monthUnit || '', 
+                inMonthReport: isMonthChecked, 
+                _when:Date.now()
+            }); 
+        } 
+      }
+
+      function openReport(id){ 
+        const saved=JSON.parse(localStorage.getItem(STORAGE_KEY)||'[]'); 
+        const rep=saved.find(r=>r.id===id); if(!rep) return; 
+        reportTitle.textContent=rep.title; reportMeta.textContent=new Date(rep.created).toLocaleString();
+        
+        const t1=document.getElementById('opfyTbody'); t1.innerHTML='';
+        const t2=document.getElementById('monthTbody'); t2.innerHTML='';
+        const t3=document.getElementById('packTbody'); t3.innerHTML='';
+        
+        const packMap = {};
+
+        rep.items.forEach((it,idx)=>{
+           // Tabel 1: Opfyldningsliste
+           const row=`<tr><td>${idx+1}</td><td>${it.område||''}</td><td>${it.varenummer||''}</td><td>${it.materiale||''}</td><td>${it.lager||''}</td><td>${it.plads||''}</td><td>${it.qty}</td><td>${it.enhed||''}</td></tr>`;
+           t1.insertAdjacentHTML('beforeend',row);
+           
+           // Tabel 2: Månedsoptælling
+           if(it.inMonthReport){
+              const u = it.monthUnit || it.enhed || '';
+              const row2=`<tr><td>${idx+1}</td><td>${it.område||''}</td><td>${it.varenummer||''}</td><td>${it.materiale||''}</td><td>${it.monthQty}</td><td>${u}</td></tr>`;
+              t2.insertAdjacentHTML('beforeend',row2);
+           }
+
+           // Aggregering til Pakkeliste (Tabel 3)
+           const vn = it.varenummer || 'Ukendt';
+           if(!packMap[vn]) {
+               packMap[vn] = { varenummer: vn, materiale: it.materiale || '', qty: 0, enhed: it.enhed || '' };
+           }
+           packMap[vn].qty += (it.qty || 0);
+        });
+
+        // Udskriv Pakkeliste sorteret på varenummer
+        const packList = Object.values(packMap).sort((a, b) => a.varenummer.localeCompare(b.varenummer));
+        packList.forEach((it, idx) => {
+            const row3 = `<tr><td>${idx+1}</td><td>${it.varenummer}</td><td>${it.materiale}</td><td>${it.qty}</td><td>${it.enhed}</td></tr>`;
+            t3.insertAdjacentHTML('beforeend', row3);
+        });
+
+        reportModalWrap.style.display='flex'; 
+        reportModalWrap.dataset.currentReport = JSON.stringify(rep);
+      }
+      window.openReport=openReport;
+      document.getElementById('closeReportModal').addEventListener('click', ()=> reportModalWrap.style.display='none');
+
+      // Helper til at lave en stabil PDF-blob.
+      // Nogle mailprogrammer kan lave tomme .tmp-filer, hvis PDF'er sendes direkte via Web Share API.
+      // Derfor genererer vi filen som ArrayBuffer -> Blob og downloader den i stedet.
+      function makePdfBlob(doc) {
+          const pdfArrayBuffer = doc.output('arraybuffer');
+          return new Blob([pdfArrayBuffer], { type: 'application/pdf' });
+      }
+
+      // Helper til selve download funktionen
+      function triggerDownload(blob, filename) {
+          if(!blob || !blob.size) {
+              alert('PDF-filen kunne ikke oprettes korrekt. Prøv igen.');
+              return;
+          }
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = filename;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          setTimeout(() => URL.revokeObjectURL(url), 4000);
+      }
+
+      // Downloader PDF-filerne og åbner en mailkladde.
+      // Filer kan ikke vedhæftes sikkert via mailto, så brugeren skal selv vedhæfte de downloadede PDF'er.
+      function downloadPdfFilesAndOpenMail(blob1, blob2, title) {
+          triggerDownload(blob1, "Opfyldningsliste.pdf");
+          if(blob2) {
+              setTimeout(() => { triggerDownload(blob2, "Maanedsoptaelling.pdf"); }, 500);
+          }
+          
+          setTimeout(() => {
+             const subject = encodeURIComponent("Rapport: " + title);
+             const body = encodeURIComponent("Hej,\n\nHer er rapporterne.\n\nPDF-filerne er downloadet. Husk at vedhæfte dem fra mappen Downloads, før mailen sendes.");
+             window.location.href = `mailto:?subject=${subject}&body=${body}`;
+          }, blob2 ? 1000 : 500);
+      }
+
+      // --- PDF GENERATOR (Deler Opfyldning+Pakkeliste, og Månedsoptælling som To separate filer) ---
+      async function generateAndSharePDF(report) {
+         if(!report) return;
+         try {
+             const { jsPDF } = window.jspdf;
+             
+             // ==========================================
+             // PDF 1: Opfyldningsliste & Pakkeliste
+             // ==========================================
+             const doc1 = new jsPDF();
+
+             // Fælles PDF-indstillinger:
+             // - mindre skrift reducerer orddeling i både overskrifter og rækker
+             // - rowPageBreak:'avoid' sikrer at en række ikke deles over to sider
+             // - linebreak bevarer hele teksten i cellen og laver pæn ombrydning
+             const pdfTableOptions = {
+                theme: 'grid',
+                margin: { left: 10, right: 10, bottom: 16 },
+                rowPageBreak: 'avoid',
+                styles: { fontSize: 8, cellPadding: 2, overflow: 'linebreak', valign: 'middle' },
+                headStyles: { fontSize: 8, cellPadding: 2, overflow: 'linebreak', valign: 'middle' },
+                bodyStyles: { fontSize: 8, overflow: 'linebreak', valign: 'middle' }
+             };
+
+             function writePdfHeader(doc, title, sectionTitle) {
+                const pageWidth = doc.internal.pageSize.getWidth();
+                const marginLeft = 10;
+                const maxTextWidth = pageWidth - 20;
+
+                doc.setFontSize(16);
+                const titleLines = doc.splitTextToSize(title, maxTextWidth);
+                doc.text(titleLines, marginLeft, 15);
+
+                const metaY = 15 + (titleLines.length * 6);
+                doc.setFontSize(9);
+                doc.text('Oprettet: ' + new Date(report.created).toLocaleString(), marginLeft, metaY + 2);
+
+                doc.setFontSize(12);
+                doc.text(sectionTitle, marginLeft, metaY + 12);
+                return metaY + 15;
+             }
+
+
+             function addPageNumbers(doc) {
+                const pageCount = doc.internal.getNumberOfPages();
+                const pageWidth = doc.internal.pageSize.getWidth();
+                const pageHeight = doc.internal.pageSize.getHeight();
+                doc.setFontSize(8);
+                doc.setTextColor(100);
+                for (let pageNo = 1; pageNo <= pageCount; pageNo++) {
+                   doc.setPage(pageNo);
+                   doc.text(`Side ${pageNo} af ${pageCount}`, pageWidth / 2, pageHeight - 8, { align: 'center' });
+                }
+                doc.setTextColor(0);
+             }
+
+             let startY1 = writePdfHeader(doc1, report.title + " (Opfyldning)", "Opfyldningsliste");
+             
+             // Tabel 1: Opfyldningsliste
+             const cols1 = ['#', 'Område', 'Varenummer', 'Materiale', 'Lager/område', 'Plads', 'Antal', 'Enhed'];
+             const rows1 = report.items.map((it, idx) => [ idx+1, it.område||'', it.varenummer||'', it.materiale||'', it.lager||'', it.plads||'', it.qty, it.enhed||'' ]);
+             
+             doc1.autoTable({
+                ...pdfTableOptions,
+                head: [cols1],
+                body: rows1,
+                startY: startY1,
+                columnStyles: {
+                   0: { cellWidth: 8 },
+                   1: { cellWidth: 28 },
+                   2: { cellWidth: 26 },
+                   4: { cellWidth: 28 },
+                   5: { cellWidth: 20 },
+                   6: { cellWidth: 14 },
+                   7: { cellWidth: 16 }
+                }
+             });
+             
+             // Tabel 3: Pakkeliste (Aggregeret)
+             const packMap = {};
+             report.items.forEach(it => {
+                 const vn = it.varenummer || 'Ukendt';
+                 if(!packMap[vn]) packMap[vn] = { varenummer: vn, materiale: it.materiale || '', qty: 0, enhed: it.enhed || '' };
+                 packMap[vn].qty += (it.qty || 0);
+             });
+             const packList = Object.values(packMap).sort((a, b) => a.varenummer.localeCompare(b.varenummer));
+             
+             if (packList.length > 0) {
+                 // Pakkelisten skal altid starte på en ny PDF-side
+                 doc1.addPage();
+                 const startY3 = writePdfHeader(doc1, report.title + " (Pakkeliste)", "Pakkeliste");
+                 const cols3 = ['#', 'Varenummer', 'Materiale', 'Samlet Antal', 'Enhed'];
+                 const rows3 = packList.map((it, idx) => [ idx+1, it.varenummer, it.materiale, it.qty, it.enhed ]);
+                 doc1.autoTable({
+                    ...pdfTableOptions,
+                    head: [cols3],
+                    body: rows3,
+                    startY: startY3,
+                    columnStyles: {
+                       0: { cellWidth: 8 },
+                       1: { cellWidth: 32 },
+                       3: { cellWidth: 24 },
+                       4: { cellWidth: 18 }
+                    }
+                 });
+             }
+
+             addPageNumbers(doc1);
+             const blob1 = makePdfBlob(doc1);
+             let blob2 = null;
+
+             // ==========================================
+             // PDF 2: Månedsoptælling (Kun hvis der er data)
+             // ==========================================
+             const monthItems = report.items.filter(i => i.inMonthReport);
+             if(monthItems.length > 0) {
+                const doc2 = new jsPDF();
+                const startY2 = writePdfHeader(doc2, report.title + " (Månedsoptælling)", "Månedsoptælling");
+                const cols2 = ['#', 'Område', 'Varenummer', 'Materiale', 'Månedsantal', 'Enhed'];
+                const rows2 = monthItems.map((it, idx) => [ idx+1, it.område||'', it.varenummer||'', it.materiale||'', it.monthQty, it.monthUnit||it.enhed||'' ]);
+                doc2.autoTable({
+                   ...pdfTableOptions,
+                   head: [cols2],
+                   body: rows2,
+                   startY: startY2,
+                   columnStyles: {
+                      0: { cellWidth: 8 },
+                      1: { cellWidth: 32 },
+                      2: { cellWidth: 30 },
+                      4: { cellWidth: 24 },
+                      5: { cellWidth: 18 }
+                   }
+                });
+                
+                addPageNumbers(doc2);
+                blob2 = makePdfBlob(doc2);
+             }
+
+             // --- DOWNLOAD + MAIL ---
+             // Mailto-links kan ikke vedhæfte filer. Direkte Web Share til Outlook/Windows er slået fra,
+             // fordi det tidligere gav tomme .tmp-vedhæftninger. Derfor downloades de rigtige PDF-filer,
+             // og mailprogrammet åbnes klar med emne/tekst bagefter.
+             alert('PDF-filerne downloades nu. Mailen åbner bagefter med emne og tekst. Vedhæft PDF-filerne fra Downloads, før mailen sendes.');
+             downloadPdfFilesAndOpenMail(blob1, blob2, report.title);
+         } catch(e) { console.error(e); }
+      }
+
+      if(exportReportBtn){
+        exportReportBtn.addEventListener('click', () => {
+             const repString = reportModalWrap.dataset.currentReport;
+             if(repString) generateAndSharePDF(JSON.parse(repString));
+        });
+      }
+
+      function handleFound(data) {
+        if (!data) return;
+        const f = parseQRFields(data);
+
+        scanning = false;
+        lastFound = data;
+        ignoredScanData = null;
+        ignoreScanUntil = 0;
+        
+        if(navigator.vibrate) try{navigator.vibrate(200);}catch(e){}
+        
+        if(scanBoxOverlay) scanBoxOverlay.style.display='none';
+        
+        if(foundArea) {
+            foundArea.style.display='flex';
+            foundArea.scrollTop = 0;
+            
+            if(foundText) {
+                let displayStr = "";
+                if(f.område) displayStr += `Område: ${f.område}
+`;
+                if(f.varenummer) displayStr += `Varenummer: ${f.varenummer}
+`;
+                if(f.materiale) displayStr += `Materiale: ${f.materiale}
+`;
+                if(f.lager) displayStr += `Lager/område: ${f.lager}
+`; 
+                if(f.plads) displayStr += `Plads: ${f.plads}
+`; 
+                if(f.antal_raw) displayStr += `Antal: ${f.antal_raw}`;
+                else if(f.enhed) displayStr += `Enhed: ${f.enhed}`;
+                
+                foundText.innerText = displayStr.trim();
+            }
+
+            // Nulstil altid felterne, når en ny QR-kode vises.
+            // Det forhindrer at antal, månedsantal eller enheder hænger fast fra forrige scan.
+            if(qtyInput) qtyInput.value = 1;
+            if(qtyUnitSelect) setSelectValue(qtyUnitSelect, f.enhed || 'STK');
+            if(monthCheckbox) monthCheckbox.checked = false;
+            if(monthQtyInput) monthQtyInput.value = '';
+            if(monthUnitSelect) setSelectValue(monthUnitSelect, (qtyUnitSelect && qtyUnitSelect.value) ? qtyUnitSelect.value : (f.enhed || 'STK'));
+            setMonthVisibility();
+        }
+      }
+
+      function tick() {
+        if (!scanning) return;
+        if (video.readyState === video.HAVE_ENOUGH_DATA) {
+          hiddenCanvas.height = video.videoHeight;
+          hiddenCanvas.width = video.videoWidth;
+          const ctx = hiddenCanvas.getContext("2d");
+          ctx.drawImage(video, 0, 0, hiddenCanvas.width, hiddenCanvas.height);
+          
+          const imageData = ctx.getImageData(0, 0, hiddenCanvas.width, hiddenCanvas.height);
+          const code = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: "dontInvert" });
+
+          if (code && code.data && code.data.trim()) {
+            const scannedData = code.data.trim();
+            if (ignoredScanData && scannedData === ignoredScanData && Date.now() < ignoreScanUntil) {
+              requestAnimationFrame(tick);
+              return;
+            }
+            handleFound(scannedData);
+            return;
+          }
+        }
+        requestAnimationFrame(tick);
+      }
+
+      async function startCameraAndScan(){
+        try {
+          const constraints = { 
+              video: { 
+                  facingMode: 'environment',
+                  width: { ideal: 1920 },
+                  height: { ideal: 1080 },
+                  advanced: [{ focusMode: 'continuous' }] 
+              }, 
+              audio:false 
+          };
+          
+          if(window._currentStream){ window._currentStream.getTracks().forEach(t=>t.stop()); window._currentStream=null; }
+          
+          const _stream = await navigator.mediaDevices.getUserMedia(constraints);
+          window._currentStream = _stream;
+          video.srcObject = _stream;
+          
+          await video.play();
+
+          const track = _stream.getVideoTracks()[0];
+          const capabilities = track.getCapabilities();
+
+          if (capabilities.focusMode && capabilities.focusMode.includes('continuous')) {
+             try { await track.applyConstraints({ advanced: [{ focusMode: 'continuous' }] }); } catch(e) {}
+          }
+
+          if (capabilities.zoom) {
+             try {
+                const zoomLevel = Math.min(capabilities.zoom.max, 2.0); 
+                await track.applyConstraints({ advanced: [{ zoom: zoomLevel }] });
+             } catch(e) {}
+          }
+          
+          if(scanBoxOverlay) scanBoxOverlay.style.display='block';
+          if(foundArea) foundArea.style.display='none';
+          
+          if(monthQtyInput) monthQtyInput.value = '';
+
+          scanning = true;
+          requestAnimationFrame(tick);
+          
+        } catch(err){ 
+          console.error(err); 
+          showError('Kunne ikke starte kamera: ' + err.name); 
+          scannerModal.style.display='none'; 
+        }
+      }
+
+      function stopCamera(){ 
+        scanning=false; 
+        if(window._currentStream){ window._currentStream.getTracks().forEach(t=>t.stop()); window._currentStream=null; } 
+        try{ video.pause(); video.srcObject=null; } catch(e){} 
+      }
+
+      // Bindings
+      document.getElementById('newListBtn').addEventListener('click', ()=> { items=[]; resetEditState(); renderItems(); mainScreen.style.display='none'; initView.style.display='block'; });
+      document.getElementById('backToMain').addEventListener('click', ()=> {
+        // Hvis brugeren er i gang med at redigere, så bekræft annullering
+        if(editingReportId){
+          if(!confirm('Vil du annullere redigeringen? Ændringer gemmes ikke.')) return;
+        }
+        resetEditState();
+        items = [];
+        initView.style.display='none';
+        mainScreen.style.display='block';
+      });
+      
+      document.getElementById('openScannerBtn').addEventListener('click', ()=>{ 
+        scannerModal.style.display='flex'; foundArea.style.display='none'; 
+        lastFound = null;
+        ignoredScanData = null;
+        ignoreScanUntil = 0;
+        qtyInput.value=1; 
+        if(qtyUnitSelect) setSelectValue(qtyUnitSelect, 'STK');
+        if(monthQtyInput) monthQtyInput.value = '';
+        if(monthUnitSelect) setSelectValue(monthUnitSelect, 'STK');
+        monthCheckbox.checked=false; setMonthVisibility(); 
+        startCameraAndScan(); 
+      });
+      document.getElementById('closeScanner').addEventListener('click', ()=>{ stopCamera(); scannerModal.style.display='none'; });
+
+      document.getElementById('acceptBtn').addEventListener('click', ()=>{ 
+        if(!lastFound) return;
+        let q=parseInt(qtyInput.value,10)||0; 
+        let unit = qtyUnitSelect ? qtyUnitSelect.value : 'STK';
+        let m=monthCheckbox.checked ? (parseInt(monthQtyInput.value,10)||0) : 0;
+        let monthUnit = monthCheckbox.checked ? monthUnitSelect.value : '';
+        let isChecked = monthCheckbox.checked;
+
+        addOrAggregateItem(lastFound, q, unit, m, monthUnit, isChecked); 
+        renderItems(); 
+        
+        const justHandled = lastFound;
+        if(foundArea) foundArea.style.display='none';
+        if(scanBoxOverlay) scanBoxOverlay.style.display='block';
+        // Undgå at samme QR-kode straks fanges igen, mens kameraet stadig peger på den.
+        // En ny/anden QR-kode kan stadig scannes med det samme.
+        ignoredScanData = justHandled;
+        ignoreScanUntil = Date.now() + 2500;
+        lastFound=null; scanning=true; requestAnimationFrame(tick);
+      });
+
+      document.getElementById('declineBtn').addEventListener('click', ()=>{ 
+        const justHandled = lastFound;
+        if(foundArea) foundArea.style.display='none';
+        if(scanBoxOverlay) scanBoxOverlay.style.display='block';
+        // Undgå at samme QR-kode straks fanges igen, mens kameraet stadig peger på den.
+        // En ny/anden QR-kode kan stadig scannes med det samme.
+        ignoredScanData = justHandled;
+        ignoreScanUntil = Date.now() + 2500;
+        lastFound=null; scanning=true; requestAnimationFrame(tick);
+      });
+
+      document.getElementById('saveReportBtn').addEventListener('click', ()=>{ 
+        if(!items.length && !confirm('Gem tom liste?')) return;
+        const saved=JSON.parse(localStorage.getItem(STORAGE_KEY)||'[]'); 
+
+        if(editingReportId){
+          // Overskriv eksisterende rapport - behold original id, dato og titel
+          const idx = saved.findIndex(r => r.id === editingReportId);
+          if(idx !== -1){
+            saved[idx] = {
+              id: editingReportId,
+              title: editingReportTitle,
+              created: editingReportCreated,
+              items: items
+            };
+          } else {
+            // Hvis rapporten ikke længere findes (f.eks. slettet i anden tab), gem som ny
+            saved.push({ id:'r_'+Date.now(), title:'Liste '+formatDateDMY(new Date()), created:Date.now(), items:items });
+          }
+          localStorage.setItem(STORAGE_KEY,JSON.stringify(saved));
+          alert('Rapport opdateret');
+        } else {
+          // Ny rapport
+          saved.push({ id:'r_'+Date.now(), title:'Liste '+formatDateDMY(new Date()), created:Date.now(), items:items });
+          localStorage.setItem(STORAGE_KEY,JSON.stringify(saved));
+          alert('Gemt');
+        }
+
+        items=[]; resetEditState(); renderItems(); initView.style.display='none'; mainScreen.style.display='block'; loadReports();
+      });
+
+      loadReports();
+    }
+  </script>
+</body>
+</html>
