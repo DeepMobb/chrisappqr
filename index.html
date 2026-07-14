@@ -552,7 +552,7 @@
             const realIdx = items.length - 1 - idx;
             const title=[it.varenummer,it.materiale].filter(Boolean).join(' — '); 
             const el=document.createElement('div'); el.className='item'; 
-            el.innerHTML=`<div style="flex:1"><div style="font-weight:600">${escapeHtml(title)}</div><div style="font-size:12px;color:#777">Område: ${escapeHtml(it.område||'')}${it.plads?' · Plads: '+escapeHtml(it.plads):''}</div></div><div class="qty-badge" style="cursor:pointer;" title="Klik for at rette antal" onclick="editItemQty(${realIdx})">${it.qty}${it.inMonthReport?'<br><span style="font-size:9px">M:'+it.monthQty+(it.monthUnit?` ${it.monthUnit}`:'')+'</span>':''}</div><button class="ghost" style="color:#c00" onclick="removeItem(${realIdx})">✕</button>`; 
+            el.innerHTML=`<div style="flex:1"><div style="font-weight:600">${escapeHtml(title)}</div><div style="font-size:12px;color:#777;display:flex;justify-content:space-between;gap:8px;"><span>Område: ${escapeHtml(it.område||'')}</span>${it.plads?'<span>Plads: '+escapeHtml(it.plads)+'</span>':''}</div></div><div class="qty-badge" style="cursor:pointer;" title="Klik for at rette antal" onclick="editItemQty(${realIdx})">${it.qty}${it.inMonthReport?'<br><span style="font-size:9px">M:'+it.monthQty+(it.monthUnit?` ${it.monthUnit}`:'')+'</span>':''}</div><button class="ghost" style="color:#c00" onclick="removeItem(${realIdx})">✕</button>`; 
             itemsList.appendChild(el); 
         }); 
       }
