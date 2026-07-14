@@ -48,9 +48,9 @@
     .ghost.pdf-icon { color: #D32F2F; font-weight: 700; }
     .ghost.edit-icon { color: #1976D2; font-weight: 700; }
     
-    .fab { width:64px; height:64px; flex:0 0 64px; border-radius:12px; background:var(--dark); color:var(--white); font-size: 26px; box-shadow: 0 4px 12px rgba(0,0,0,0.2); padding:0; display:flex; align-items:center; justify-content:center; line-height:1; text-align:center; }
+    .fab { width:64px; height:64px; border-radius:20px; background:var(--dark); color:var(--white); font-size: 24px; box-shadow: 0 6px 16px rgba(0,0,0,0.2); }
 
-    .save-btn{position:static;bottom:auto;z-index:20; margin-left:0; height:64px; border-radius:12px; background:linear-gradient(90deg,var(--accent),#b71f2a);}
+    .save-btn{position:sticky;bottom:12px;z-index:20; margin-left:12px; background:linear-gradient(90deg,var(--accent),#b71f2a);}
     
     .muted-note{color:var(--muted);font-size:13px;}
     .reports{margin-top:14px;display:flex;flex-direction:column;gap:10px;}
@@ -64,7 +64,7 @@
     .item{display:flex;gap:12px;align-items:center;padding:8px;border-radius:8px;border-bottom:1px solid #eee;}
     .qty-badge{background:#f3f3f3;border-radius:8px;padding:6px 10px;font-weight:700;color:var(--dark);text-align:center;min-width:40px;}
     .month-badge{background:#fff;border-radius:4px;padding:2px 6px;font-size:10px;border:1px solid #ddd;display:block;margin-top:4px;color:#333;}
-    .toolbar{display:grid;grid-template-columns:64px 1fr;gap:12px;margin-bottom:12px;align-items:center;}
+    .toolbar{display:flex;gap:12px;margin-bottom:12px;justify-content:space-between;align-items:center;}
 
     /* Banner der viser at man er i redigeringstilstand */
     .edit-banner { background: #E3F2FD; color: #1565C0; padding: 10px 14px; border-radius: 10px; margin-bottom: 12px; font-size: 14px; font-weight: 600; border: 1px solid #BBDEFB; display: none; }
@@ -84,8 +84,8 @@
       border-radius: 20px; border: 2px solid rgba(255,255,255,0.8);
       box-shadow: 0 0 0 100vmax rgba(0,0,0,0.5); z-index: 10; pointer-events: none;
     }
-    /* Rød scannelinje fjernet - selve scannerboksen beholdes */
-    .scan-line{display:none;}
+    .scan-line{position:absolute;left:10%;right:10%;height:2px;background:#ff0000;box-shadow:0 0 4px red; animation:scanmove 2s ease-in-out infinite;}
+    @keyframes scanmove{0%{top:10%}50%{top:90%}100%{top:10%}}
 
     /* --- FULD SKÆRM RESULTAT & SCROLL --- */
     #foundArea {
@@ -94,24 +94,6 @@
         overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 24px;
     }
     .found-content { max-width: 600px; margin: 0 auto; width: 100%; padding-bottom: 100px; }
-    .scan-form-grid{display:grid; grid-template-columns: 1fr 1fr; gap:16px; align-items:end; margin-top:30px;}
-    .month-form-grid{display:grid; grid-template-columns: 1fr 1fr; gap:16px; align-items:end;}
-    .scan-field{display:flex; flex-direction:column;}
-    .scan-field label{font-size:14px; font-weight:700; display:block; margin-bottom:8px; color:#333; line-height:1.2; min-height:17px;}
-    .toggle-spacer{display:none;}
-    .month-toggle-field{grid-column:1 / -1;}
-    label.month-toggle{
-        height:54px !important;
-        display:grid !important;
-        grid-template-columns:24px auto;
-        align-items:center !important;
-        justify-content:start;
-        column-gap:10px;
-        cursor:pointer; background:#fff; border:2px solid #eee; padding:0 20px !important; border-radius:12px; width:100%;
-        margin:0 !important;
-    }
-    label.month-toggle input{width:24px; height:24px; margin:0 !important; display:block; align-self:center; justify-self:center;}
-    label.month-toggle span{display:block !important; height:auto; margin:0 !important; font-size:16px; font-weight:700; line-height:1; white-space:nowrap; align-self:center;}
     .controls{display:grid; grid-template-columns: 1fr 1fr; gap:16px; margin-top:30px; padding-top:20px; border-top:1px solid #eee;}
     
     .num-input, .num-input-month, .unit-select {
@@ -122,11 +104,6 @@
         text-align-last: center; appearance: none;
         background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23333%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E");
         background-repeat: no-repeat; background-position: right 12px top 50%; background-size: 12px auto;
-    }
-
-    @media (max-width: 480px){
-        .scan-form-grid, .month-form-grid{grid-template-columns: 1fr;}
-        .scan-field.month-toggle-field{grid-column: 1 / -1;}
     }
 
     .report-modal{width:95%; max-width:1000px; background:var(--card); border-radius:12px; padding:14px; max-height:90vh; overflow:auto; box-shadow: 0 10px 30px rgba(0,0,0,0.1);}
@@ -185,7 +162,9 @@
 
         <div class="video-wrap">
           <video id="video" autoplay muted playsinline></video>
-          <div class="scan-box" id="scanBoxOverlay"></div>
+          <div class="scan-box" id="scanBoxOverlay">
+            <div class="scan-line"></div>
+          </div>
         </div>
 
         <div id="foundArea" style="display:none;">
@@ -199,39 +178,28 @@
             <div style="font-weight:600; font-size:13px; text-transform:uppercase; color:#888; margin-bottom:6px;">Scannet tekst</div>
             <div id="foundText" style="word-break:break-word; color:#111; font-weight:500; font-size:16px; margin-bottom:30px; line-height:1.5; background:#f0f0f0; padding:12px; border-radius:8px;"></div>
 
-            <div class="scan-form-grid">
-               <div class="scan-field">
-                   <label for="qtyInput">Antal</label>
+            <div style="display:flex; gap:16px; align-items:flex-start;">
+               <div style="flex:1;">
+                   <label style="font-size:14px; font-weight:700; display:block; margin-bottom:8px; color:#333;">Antal stk.</label>
                    <input id="qtyInput" class="num-input" type="number" min="0" step="1" value="1" inputmode="numeric">
                </div>
-               <div class="scan-field">
-                   <label for="qtyUnitSelect">Enhed til antal</label>
-                   <select id="qtyUnitSelect" class="unit-select">
-                       <option value="STK">STK</option>
-                       <option value="RULL">RULL</option>
-                       <option value="KS">KS</option>
-                       <option value="PL">PL</option>
-                       <option value="Dunke">Dunke</option>
-                       <option value="m2">m2</option>
-                   </select>
-               </div>
-               <div class="scan-field month-toggle-field">
-                  <span class="toggle-spacer">Månedsrapport</span>
-                  <label class="month-toggle" for="monthCheckbox">
-                    <input id="monthCheckbox" type="checkbox" />
-                    <span>Månedsrapport</span>
+               
+               <div style="flex:1; padding-top:34px;">
+                  <label style="display:flex; align-items:center; gap:12px; cursor:pointer; background:#fff; border:2px solid #eee; padding:12px; border-radius:12px;">
+                    <input id="monthCheckbox" type="checkbox" style="width:24px; height:24px;" />
+                    <span style="font-size:14px; font-weight:600; line-height:1.2;">Måneds<br>rapport</span>
                   </label>
                </div>
             </div>
 
             <div id="monthInputRow" style="display:none; margin-top:24px;">
-               <div class="month-form-grid">
-                   <div class="scan-field">
-                       <label for="monthQtyInput">Antal til måned</label>
+               <div style="display:flex; gap:16px;">
+                   <div style="flex:1;">
+                       <label style="font-size:14px; font-weight:700; display:block; margin-bottom:8px; color:#333;">Antal til måned</label>
                        <input id="monthQtyInput" class="num-input-month" type="number" min="0" step="1" value="" placeholder="0" inputmode="numeric" />
                    </div>
-                   <div class="scan-field">
-                       <label for="monthUnitSelect">Enhed til måned</label>
+                   <div style="flex:1;">
+                       <label style="font-size:14px; font-weight:700; display:block; margin-bottom:8px; color:#333;">Enhed</label>
                        <select id="monthUnitSelect" class="unit-select">
                            <option value="STK">STK</option>
                            <option value="RULL">RULL</option>
@@ -336,46 +304,18 @@
     <div id="editQtyModal" class="modal" style="display:none; background:rgba(0,0,0,0.5);">
       <div class="report-modal" style="max-width:500px; padding:24px;">
         <div style="margin-bottom: 20px; border-bottom: 1px solid #eee; padding-bottom:10px;">
-            <div style="font-weight:800; font-size:22px; color:var(--dark);">Ret antal og enhed</div>
+            <div style="font-weight:800; font-size:22px; color:var(--dark);">Ret antal</div>
             <div id="editQtyVareInfo" style="color:#777; font-size:14px; margin-top:4px;"></div>
         </div>
 
-        <div style="display:flex; gap:16px; margin-bottom:20px;">
-            <div style="flex:1;">
-                <label style="font-size:14px; font-weight:700; display:block; margin-bottom:8px; color:#333;">Antal stk.</label>
-                <input id="editQtyInput" class="num-input" type="number" min="0" step="1" inputmode="numeric">
-            </div>
-            <div style="flex:1;">
-                <label style="font-size:14px; font-weight:700; display:block; margin-bottom:8px; color:#333;">Enhed til antal</label>
-                <select id="editUnitSelect" class="unit-select">
-                    <option value="STK">STK</option>
-                    <option value="RULL">RULL</option>
-                    <option value="KS">KS</option>
-                    <option value="PL">PL</option>
-                    <option value="Dunke">Dunke</option>
-                    <option value="m2">m2</option>
-                </select>
-            </div>
+        <div style="margin-bottom:20px;">
+            <label style="font-size:14px; font-weight:700; display:block; margin-bottom:8px; color:#333;">Antal stk.</label>
+            <input id="editQtyInput" class="num-input" type="number" min="0" step="1" inputmode="numeric">
         </div>
 
         <div id="editMonthQtyRow" style="display:none; margin-bottom:20px;">
-            <div style="display:flex; gap:16px;">
-                <div style="flex:1;">
-                    <label style="font-size:14px; font-weight:700; display:block; margin-bottom:8px; color:#333;">Månedsantal</label>
-                    <input id="editMonthQtyInput" class="num-input" type="number" min="0" step="1" inputmode="numeric">
-                </div>
-                <div style="flex:1;">
-                    <label style="font-size:14px; font-weight:700; display:block; margin-bottom:8px; color:#333;">Månedsenhed</label>
-                    <select id="editMonthUnitSelect" class="unit-select">
-                        <option value="STK">STK</option>
-                        <option value="RULL">RULL</option>
-                        <option value="KS">KS</option>
-                        <option value="PL">PL</option>
-                        <option value="Dunke">Dunke</option>
-                        <option value="m2">m2</option>
-                    </select>
-                </div>
-            </div>
+            <label style="font-size:14px; font-weight:700; display:block; margin-bottom:8px; color:#333;">Månedsantal</label>
+            <input id="editMonthQtyInput" class="num-input" type="number" min="0" step="1" inputmode="numeric">
         </div>
 
         <div class="controls" style="margin-top:10px; padding-top:20px;">
@@ -422,7 +362,6 @@
       const scanBoxOverlay = document.getElementById('scanBoxOverlay');
       
       const qtyInput = document.getElementById('qtyInput');
-      const qtyUnitSelect = document.getElementById('qtyUnitSelect');
       const monthCheckbox = document.getElementById('monthCheckbox');
       const monthQtyInput = document.getElementById('monthQtyInput');
       const monthUnitSelect = document.getElementById('monthUnitSelect');
@@ -441,7 +380,6 @@
       const initSubtitle = document.getElementById('initSubtitle');
 
       let stream = null, scanning = false, lastFound = null;
-      let ignoredScanData = null, ignoreScanUntil = 0;
       let items = [];
       // State der holder styr på om vi redigerer en eksisterende rapport
       let editingReportId = null;
@@ -509,7 +447,7 @@
             if(target === 'antal'){
                 // Bevar eksisterende logik for antal/enhed
                 fields.antal_raw=v; 
-                const m=v.match(/^\s*([0-9]+(?:[.,][0-9]+)?)(?:\s*(.*))?$/); 
+                const m=v.match(/^\s*([0-9]+(?:[.,][0-9]+)?)(?:\s+(.*))?$/); 
                 if(m) fields.enhed=(m[2]||'').trim(); else fields.enhed=v; 
             } else {
                 fields[target]=v;
@@ -520,11 +458,7 @@
       function itemKeyFromRaw(raw){ return raw; }
 
       function setMonthVisibility(){ 
-        if(monthCheckbox.checked){ 
-          monthInputRow.style.display='block'; 
-          monthQtyInput.disabled=false; 
-          if(qtyUnitSelect) setSelectValue(monthUnitSelect, qtyUnitSelect.value || 'STK');
-        } 
+        if(monthCheckbox.checked){ monthInputRow.style.display='block'; monthQtyInput.disabled=false; } 
         else { monthInputRow.style.display='none'; monthQtyInput.disabled=true; monthQtyInput.value=''; } 
       }
       monthCheckbox.addEventListener('change', setMonthVisibility);
@@ -617,10 +551,8 @@
         items.slice().reverse().forEach((it, idx)=>{ 
             const realIdx = items.length - 1 - idx;
             const title=[it.varenummer,it.materiale].filter(Boolean).join(' — '); 
-            const qtyUnitText = `${it.qty}${it.enhed ? ' ' + escapeHtml(it.enhed) : ''}`;
-            const monthText = it.inMonthReport ? `<br><span style="font-size:9px">M:${it.monthQty}${it.monthUnit ? ' ' + escapeHtml(it.monthUnit) : ''}</span>` : '';
             const el=document.createElement('div'); el.className='item'; 
-            el.innerHTML=`<div style="flex:1"><div style="font-weight:600">${escapeHtml(title)}</div><div style="font-size:12px;color:#777">Område: ${escapeHtml(it.område||'')}</div></div><div class="qty-badge" style="cursor:pointer;" title="Klik for at rette antal og enhed" onclick="editItemQty(${realIdx})">${qtyUnitText}${monthText}</div><button class="ghost" style="color:#c00" onclick="removeItem(${realIdx})">✕</button>`; 
+            el.innerHTML=`<div style="flex:1"><div style="font-weight:600">${escapeHtml(title)}</div><div style="font-size:12px;color:#777">Område: ${escapeHtml(it.område||'')}</div></div><div class="qty-badge" style="cursor:pointer;" title="Klik for at rette antal" onclick="editItemQty(${realIdx})">${it.qty}${it.inMonthReport?'<br><span style="font-size:9px">M:'+it.monthQty+(it.monthUnit?` ${it.monthUnit}`:'')+'</span>':''}</div><button class="ghost" style="color:#c00" onclick="removeItem(${realIdx})">✕</button>`; 
             itemsList.appendChild(el); 
         }); 
       }
@@ -630,36 +562,20 @@
       const editQtyModal = document.getElementById('editQtyModal');
       const editQtyVareInfo = document.getElementById('editQtyVareInfo');
       const editQtyInput = document.getElementById('editQtyInput');
-      const editUnitSelect = document.getElementById('editUnitSelect');
       const editMonthQtyRow = document.getElementById('editMonthQtyRow');
       const editMonthQtyInput = document.getElementById('editMonthQtyInput');
-      const editMonthUnitSelect = document.getElementById('editMonthUnitSelect');
       const editQtySaveBtn = document.getElementById('editQtySaveBtn');
       const editQtyCancelBtn = document.getElementById('editQtyCancelBtn');
       let editingItemIdx = null;
-
-      function setSelectValue(select, value){
-        if(!select) return;
-        const val = (value || '').trim();
-        if(val && !Array.from(select.options).some(opt => opt.value === val)){
-          const option = document.createElement('option');
-          option.value = val;
-          option.textContent = val;
-          select.appendChild(option);
-        }
-        select.value = val || 'STK';
-      }
 
       window.editItemQty=function(idx){
         const it = items[idx]; if(!it) return;
         editingItemIdx = idx;
         editQtyVareInfo.textContent = (it.varenummer || 'Vare') + (it.materiale ? ' — ' + it.materiale : '');
         editQtyInput.value = it.qty;
-        setSelectValue(editUnitSelect, it.enhed || 'STK');
         if(it.inMonthReport){
           editMonthQtyRow.style.display = 'block';
           editMonthQtyInput.value = it.monthQty;
-          setSelectValue(editMonthUnitSelect, it.monthUnit || it.enhed || 'STK');
         } else {
           editMonthQtyRow.style.display = 'none';
         }
@@ -679,40 +595,35 @@
         const newQty = parseInt(editQtyInput.value, 10);
         if(isNaN(newQty) || newQty < 0){ alert('Ugyldigt antal'); return; }
         it.qty = newQty;
-        it.enhed = editUnitSelect.value;
         if(it.inMonthReport){
           const newMonth = parseInt(editMonthQtyInput.value, 10);
           if(isNaN(newMonth) || newMonth < 0){ alert('Ugyldigt månedsantal'); return; }
           it.monthQty = newMonth;
-          it.monthUnit = editMonthUnitSelect.value;
         }
         editQtyModal.style.display = 'none';
         editingItemIdx = null;
         renderItems();
       });
 
-      function addOrAggregateItem(rawData, qtyToAdd, unit, monthQtyToAdd, monthUnit, isMonthChecked){ 
+      function addOrAggregateItem(rawData, qtyToAdd, monthQtyToAdd, monthUnit, isMonthChecked){ 
         const key=itemKeyFromRaw(rawData); 
-        const parsed=parseQRFields(rawData); 
-        const selectedUnit = unit || parsed.enhed || 'STK';
         const existing=items.find(i=>i.key===key); 
         if(existing){ 
             existing.qty+=qtyToAdd; 
-            existing.enhed = selectedUnit;
             existing.monthQty+=monthQtyToAdd; 
             if(monthUnit) existing.monthUnit = monthUnit; 
             if(isMonthChecked) existing.inMonthReport = true; 
             existing._when=Date.now(); 
         } 
         else { 
+            const parsed=parseQRFields(rawData); 
             items.push({ 
-                key, data:rawData, ...parsed,
+                key, data:rawData, 
                 qty:qtyToAdd, 
-                enhed: selectedUnit,
                 monthQty:monthQtyToAdd, 
                 monthUnit: monthUnit || '', 
                 inMonthReport: isMonthChecked, 
-                _when:Date.now()
+                _when:Date.now(), ...parsed 
             }); 
         } 
       }
@@ -761,33 +672,17 @@
       window.openReport=openReport;
       document.getElementById('closeReportModal').addEventListener('click', ()=> reportModalWrap.style.display='none');
 
-      // Helper til at lave en stabil PDF-blob.
-      // Nogle mailprogrammer kan lave tomme .tmp-filer, hvis PDF'er sendes direkte via Web Share API.
-      // Derfor genererer vi filen som ArrayBuffer -> Blob og downloader den i stedet.
-      function makePdfBlob(doc) {
-          const pdfArrayBuffer = doc.output('arraybuffer');
-          return new Blob([pdfArrayBuffer], { type: 'application/pdf' });
-      }
-
-      // Helper til selve download funktionen
+      // Helper til selve download funktionen (når share fejler)
       function triggerDownload(blob, filename) {
-          if(!blob || !blob.size) {
-              alert('PDF-filen kunne ikke oprettes korrekt. Prøv igen.');
-              return;
-          }
           const url = URL.createObjectURL(blob);
           const a = document.createElement("a");
-          a.href = url;
-          a.download = filename;
-          document.body.appendChild(a);
-          a.click();
+          a.href = url; a.download = filename;
+          document.body.appendChild(a); a.click();
           document.body.removeChild(a);
-          setTimeout(() => URL.revokeObjectURL(url), 4000);
       }
 
-      // Downloader PDF-filerne og åbner en mailkladde.
-      // Filer kan ikke vedhæftes sikkert via mailto, så brugeren skal selv vedhæfte de downloadede PDF'er.
-      function downloadPdfFilesAndOpenMail(blob1, blob2, title) {
+      // Kaldes hvis browser ikke understøtter share, downloader filer og åbner mail
+      function doFallbackDownload(blob1, blob2, title) {
           triggerDownload(blob1, "Opfyldningsliste.pdf");
           if(blob2) {
               setTimeout(() => { triggerDownload(blob2, "Maanedsoptaelling.pdf"); }, 500);
@@ -795,7 +690,7 @@
           
           setTimeout(() => {
              const subject = encodeURIComponent("Rapport: " + title);
-             const body = encodeURIComponent("Hej,\n\nHer er rapporterne.\n\nPDF-filerne er downloadet. Husk at vedhæfte dem fra mappen Downloads, før mailen sendes.");
+             const body = encodeURIComponent("Hej,\n\nHer er rapporterne.\n\n(Husk at vedhæfte filerne fra dine downloads).");
              window.location.href = `mailto:?subject=${subject}&body=${body}`;
           }, blob2 ? 1000 : 500);
       }
@@ -810,74 +705,18 @@
              // PDF 1: Opfyldningsliste & Pakkeliste
              // ==========================================
              const doc1 = new jsPDF();
-
-             // Fælles PDF-indstillinger:
-             // - mindre skrift reducerer orddeling i både overskrifter og rækker
-             // - rowPageBreak:'avoid' sikrer at en række ikke deles over to sider
-             // - linebreak bevarer hele teksten i cellen og laver pæn ombrydning
-             const pdfTableOptions = {
-                theme: 'grid',
-                margin: { left: 10, right: 10, bottom: 16 },
-                rowPageBreak: 'avoid',
-                styles: { fontSize: 8, cellPadding: 2, overflow: 'linebreak', valign: 'middle' },
-                headStyles: { fontSize: 8, cellPadding: 2, overflow: 'linebreak', valign: 'middle' },
-                bodyStyles: { fontSize: 8, overflow: 'linebreak', valign: 'middle' }
-             };
-
-             function writePdfHeader(doc, title, sectionTitle) {
-                const pageWidth = doc.internal.pageSize.getWidth();
-                const marginLeft = 10;
-                const maxTextWidth = pageWidth - 20;
-
-                doc.setFontSize(16);
-                const titleLines = doc.splitTextToSize(title, maxTextWidth);
-                doc.text(titleLines, marginLeft, 15);
-
-                const metaY = 15 + (titleLines.length * 6);
-                doc.setFontSize(9);
-                doc.text('Oprettet: ' + new Date(report.created).toLocaleString(), marginLeft, metaY + 2);
-
-                doc.setFontSize(12);
-                doc.text(sectionTitle, marginLeft, metaY + 12);
-                return metaY + 15;
-             }
-
-
-             function addPageNumbers(doc) {
-                const pageCount = doc.internal.getNumberOfPages();
-                const pageWidth = doc.internal.pageSize.getWidth();
-                const pageHeight = doc.internal.pageSize.getHeight();
-                doc.setFontSize(8);
-                doc.setTextColor(100);
-                for (let pageNo = 1; pageNo <= pageCount; pageNo++) {
-                   doc.setPage(pageNo);
-                   doc.text(`Side ${pageNo} af ${pageCount}`, pageWidth / 2, pageHeight - 8, { align: 'center' });
-                }
-                doc.setTextColor(0);
-             }
-
-             let startY1 = writePdfHeader(doc1, report.title + " (Opfyldning)", "Opfyldningsliste");
+             doc1.setFontSize(18); doc1.text(report.title + " (Opfyldning)", 14, 15);
+             doc1.setFontSize(10); doc1.text('Oprettet: ' + new Date(report.created).toLocaleString(), 14, 22);
              
              // Tabel 1: Opfyldningsliste
              const cols1 = ['#', 'Område', 'Varenummer', 'Materiale', 'Lager/område', 'Plads', 'Antal', 'Enhed'];
              const rows1 = report.items.map((it, idx) => [ idx+1, it.område||'', it.varenummer||'', it.materiale||'', it.lager||'', it.plads||'', it.qty, it.enhed||'' ]);
              
-             doc1.autoTable({
-                ...pdfTableOptions,
-                head: [cols1],
-                body: rows1,
-                startY: startY1,
-                columnStyles: {
-                   0: { cellWidth: 8 },
-                   1: { cellWidth: 28 },
-                   2: { cellWidth: 26 },
-                   4: { cellWidth: 28 },
-                   5: { cellWidth: 20 },
-                   6: { cellWidth: 14 },
-                   7: { cellWidth: 16 }
-                }
-             });
+             doc1.setFontSize(14); doc1.text("Opfyldningsliste", 14, 32);
+             doc1.autoTable({ head: [cols1], body: rows1, startY: 35, theme: 'grid' });
              
+             let finalY = doc1.lastAutoTable.finalY || 40;
+
              // Tabel 3: Pakkeliste (Aggregeret)
              const packMap = {};
              report.items.forEach(it => {
@@ -888,27 +727,16 @@
              const packList = Object.values(packMap).sort((a, b) => a.varenummer.localeCompare(b.varenummer));
              
              if (packList.length > 0) {
-                 // Pakkelisten skal altid starte på en ny PDF-side
-                 doc1.addPage();
-                 const startY3 = writePdfHeader(doc1, report.title + " (Pakkeliste)", "Pakkeliste");
+                 doc1.text("Pakkeliste", 14, finalY + 10);
                  const cols3 = ['#', 'Varenummer', 'Materiale', 'Samlet Antal', 'Enhed'];
                  const rows3 = packList.map((it, idx) => [ idx+1, it.varenummer, it.materiale, it.qty, it.enhed ]);
-                 doc1.autoTable({
-                    ...pdfTableOptions,
-                    head: [cols3],
-                    body: rows3,
-                    startY: startY3,
-                    columnStyles: {
-                       0: { cellWidth: 8 },
-                       1: { cellWidth: 32 },
-                       3: { cellWidth: 24 },
-                       4: { cellWidth: 18 }
-                    }
-                 });
+                 doc1.autoTable({ head: [cols3], body: rows3, startY: finalY + 15, theme: 'grid' });
              }
 
-             addPageNumbers(doc1);
-             const blob1 = makePdfBlob(doc1);
+             const blob1 = doc1.output('blob');
+             const file1 = new File([blob1], "Opfyldningsliste.pdf", { type: "application/pdf" });
+             
+             let filesToShare = [file1];
              let blob2 = null;
 
              // ==========================================
@@ -917,33 +745,33 @@
              const monthItems = report.items.filter(i => i.inMonthReport);
              if(monthItems.length > 0) {
                 const doc2 = new jsPDF();
-                const startY2 = writePdfHeader(doc2, report.title + " (Månedsoptælling)", "Månedsoptælling");
+                doc2.setFontSize(18); doc2.text(report.title + " (Månedsoptælling)", 14, 15);
+                doc2.setFontSize(10); doc2.text('Oprettet: ' + new Date(report.created).toLocaleString(), 14, 22);
+
+                doc2.setFontSize(14); doc2.text("Månedsoptælling", 14, 32);
                 const cols2 = ['#', 'Område', 'Varenummer', 'Materiale', 'Månedsantal', 'Enhed'];
                 const rows2 = monthItems.map((it, idx) => [ idx+1, it.område||'', it.varenummer||'', it.materiale||'', it.monthQty, it.monthUnit||it.enhed||'' ]);
-                doc2.autoTable({
-                   ...pdfTableOptions,
-                   head: [cols2],
-                   body: rows2,
-                   startY: startY2,
-                   columnStyles: {
-                      0: { cellWidth: 8 },
-                      1: { cellWidth: 32 },
-                      2: { cellWidth: 30 },
-                      4: { cellWidth: 24 },
-                      5: { cellWidth: 18 }
-                   }
-                });
+                doc2.autoTable({ head: [cols2], body: rows2, startY: 35, theme: 'grid' });
                 
-                addPageNumbers(doc2);
-                blob2 = makePdfBlob(doc2);
+                blob2 = doc2.output('blob');
+                const file2 = new File([blob2], "Maanedsoptaelling.pdf", { type: "application/pdf" });
+                filesToShare.push(file2); // Tilføj fil 2 til delingslisten
              }
 
-             // --- DOWNLOAD + MAIL ---
-             // Mailto-links kan ikke vedhæfte filer. Direkte Web Share til Outlook/Windows er slået fra,
-             // fordi det tidligere gav tomme .tmp-vedhæftninger. Derfor downloades de rigtige PDF-filer,
-             // og mailprogrammet åbnes klar med emne/tekst bagefter.
-             alert('PDF-filerne downloades nu. Mailen åbner bagefter med emne og tekst. Vedhæft PDF-filerne fra Downloads, før mailen sendes.');
-             downloadPdfFilesAndOpenMail(blob1, blob2, report.title);
+             // --- DEL ELLER DOWNLOAD ---
+             if (navigator.share && navigator.canShare && navigator.canShare({ files: filesToShare })) {
+                try { 
+                    await navigator.share({ files: filesToShare, title: report.title, text: 'Her er rapporten.' }); 
+                } catch (err) {
+                    if (err.name !== 'AbortError') { 
+                       alert('Deling mislykkedes (Sikkerhed). Filerne downloades nu. Vedhæft dem selv til mailen, der åbner.');
+                       doFallbackDownload(blob1, blob2, report.title);
+                    }
+                }
+             } else {
+                alert('Browseren tillader ikke direkte deling. Filerne downloades nu. Vedhæft dem selv til mailen, der åbner.');
+                doFallbackDownload(blob1, blob2, report.title);
+             }
          } catch(e) { console.error(e); }
       }
 
@@ -956,46 +784,31 @@
 
       function handleFound(data) {
         if (!data) return;
-        const f = parseQRFields(data);
-
-        scanning = false;
-        lastFound = data;
-        ignoredScanData = null;
-        ignoreScanUntil = 0;
+        scanning = false; lastFound = data;
         
         if(navigator.vibrate) try{navigator.vibrate(200);}catch(e){}
         
         if(scanBoxOverlay) scanBoxOverlay.style.display='none';
         
         if(foundArea) {
-            foundArea.style.display='flex';
-            foundArea.scrollTop = 0;
+            foundArea.style.display='flex'; 
             
             if(foundText) {
+                const f = parseQRFields(data);
                 let displayStr = "";
-                if(f.område) displayStr += `Område: ${f.område}
-`;
-                if(f.varenummer) displayStr += `Varenummer: ${f.varenummer}
-`;
-                if(f.materiale) displayStr += `Materiale: ${f.materiale}
-`;
-                if(f.lager) displayStr += `Lager/område: ${f.lager}
-`; 
-                if(f.plads) displayStr += `Plads: ${f.plads}
-`; 
+                if(f.område) displayStr += `Område: ${f.område}\n`;
+                if(f.varenummer) displayStr += `Varenummer: ${f.varenummer}\n`;
+                if(f.materiale) displayStr += `Materiale: ${f.materiale}\n`;
+                if(f.lager) displayStr += `Lager/område: ${f.lager}\n`; 
+                if(f.plads) displayStr += `Plads: ${f.plads}\n`; 
                 if(f.antal_raw) displayStr += `Antal: ${f.antal_raw}`;
                 else if(f.enhed) displayStr += `Enhed: ${f.enhed}`;
                 
                 foundText.innerText = displayStr.trim();
             }
 
-            // Nulstil altid felterne, når en ny QR-kode vises.
-            // Det forhindrer at antal, månedsantal eller enheder hænger fast fra forrige scan.
-            if(qtyInput) qtyInput.value = 1;
-            if(qtyUnitSelect) setSelectValue(qtyUnitSelect, f.enhed || 'STK');
+            if(qtyInput) qtyInput.value=1;
             if(monthCheckbox) monthCheckbox.checked = false;
-            if(monthQtyInput) monthQtyInput.value = '';
-            if(monthUnitSelect) setSelectValue(monthUnitSelect, (qtyUnitSelect && qtyUnitSelect.value) ? qtyUnitSelect.value : (f.enhed || 'STK'));
             setMonthVisibility();
         }
       }
@@ -1003,22 +816,51 @@
       function tick() {
         if (!scanning) return;
         if (video.readyState === video.HAVE_ENOUGH_DATA) {
-          hiddenCanvas.height = video.videoHeight;
-          hiddenCanvas.width = video.videoWidth;
-          const ctx = hiddenCanvas.getContext("2d");
-          ctx.drawImage(video, 0, 0, hiddenCanvas.width, hiddenCanvas.height);
-          
-          const imageData = ctx.getImageData(0, 0, hiddenCanvas.width, hiddenCanvas.height);
-          const code = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: "dontInvert" });
+          const pixelW = video.videoWidth;
+          const pixelH = video.videoHeight;
+          const videoRect = video.getBoundingClientRect();
+          const scanRect = scanBoxOverlay.getBoundingClientRect();
 
-          if (code && code.data && code.data.trim()) {
-            const scannedData = code.data.trim();
-            if (ignoredScanData && scannedData === ignoredScanData && Date.now() < ignoreScanUntil) {
-              requestAnimationFrame(tick);
+          // Sikrer at alle mål er klar - ellers vent til næste frame
+          if (pixelW > 0 && pixelH > 0 && videoRect.width > 0 && scanRect.width > 0) {
+            // Videoen bruger object-fit: cover, så en del af den bliver beskåret.
+            // Beregn skalering og forskydning så vi kan mappe scan-boksens
+            // skærmkoordinater til videoens faktiske pixel-koordinater.
+            const scale = Math.max(videoRect.width / pixelW, videoRect.height / pixelH);
+            const scaledW = pixelW * scale;
+            const scaledH = pixelH * scale;
+            const offsetX = (scaledW - videoRect.width) / 2;
+            const offsetY = (scaledH - videoRect.height) / 2;
+
+            // Scan-boksens position relativt til videoen (i skærmpixels)
+            const scanX = scanRect.left - videoRect.left;
+            const scanY = scanRect.top - videoRect.top;
+
+            // Konverter til kildekoordinater i videoens pixelrum
+            let srcX = (scanX + offsetX) / scale;
+            let srcY = (scanY + offsetY) / scale;
+            let srcW = scanRect.width / scale;
+            let srcH = scanRect.height / scale;
+
+            // Klipper eventuelle overløb, så vi ikke går ud over videoens grænser
+            srcX = Math.max(0, Math.min(srcX, pixelW - 1));
+            srcY = Math.max(0, Math.min(srcY, pixelH - 1));
+            srcW = Math.max(1, Math.min(srcW, pixelW - srcX));
+            srcH = Math.max(1, Math.min(srcH, pixelH - srcY));
+
+            hiddenCanvas.width = Math.floor(srcW);
+            hiddenCanvas.height = Math.floor(srcH);
+            const ctx = hiddenCanvas.getContext("2d");
+            // Tegner KUN scan-boksens område over på canvas
+            ctx.drawImage(video, srcX, srcY, srcW, srcH, 0, 0, hiddenCanvas.width, hiddenCanvas.height);
+
+            const imageData = ctx.getImageData(0, 0, hiddenCanvas.width, hiddenCanvas.height);
+            const code = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: "dontInvert" });
+
+            if (code && code.data && code.data.trim()) {
+              handleFound(code.data);
               return;
             }
-            handleFound(scannedData);
-            return;
           }
         }
         requestAnimationFrame(tick);
@@ -1094,14 +936,7 @@
       
       document.getElementById('openScannerBtn').addEventListener('click', ()=>{ 
         scannerModal.style.display='flex'; foundArea.style.display='none'; 
-        lastFound = null;
-        ignoredScanData = null;
-        ignoreScanUntil = 0;
-        qtyInput.value=1; 
-        if(qtyUnitSelect) setSelectValue(qtyUnitSelect, 'STK');
-        if(monthQtyInput) monthQtyInput.value = '';
-        if(monthUnitSelect) setSelectValue(monthUnitSelect, 'STK');
-        monthCheckbox.checked=false; setMonthVisibility(); 
+        qtyInput.value=1; monthCheckbox.checked=false; setMonthVisibility(); 
         startCameraAndScan(); 
       });
       document.getElementById('closeScanner').addEventListener('click', ()=>{ stopCamera(); scannerModal.style.display='none'; });
@@ -1109,32 +944,21 @@
       document.getElementById('acceptBtn').addEventListener('click', ()=>{ 
         if(!lastFound) return;
         let q=parseInt(qtyInput.value,10)||0; 
-        let unit = qtyUnitSelect ? qtyUnitSelect.value : 'STK';
         let m=monthCheckbox.checked ? (parseInt(monthQtyInput.value,10)||0) : 0;
-        let monthUnit = monthCheckbox.checked ? monthUnitSelect.value : '';
+        let u = monthCheckbox.checked ? monthUnitSelect.value : '';
         let isChecked = monthCheckbox.checked;
 
-        addOrAggregateItem(lastFound, q, unit, m, monthUnit, isChecked); 
+        addOrAggregateItem(lastFound, q, m, u, isChecked); 
         renderItems(); 
         
-        const justHandled = lastFound;
         if(foundArea) foundArea.style.display='none';
         if(scanBoxOverlay) scanBoxOverlay.style.display='block';
-        // Undgå at samme QR-kode straks fanges igen, mens kameraet stadig peger på den.
-        // En ny/anden QR-kode kan stadig scannes med det samme.
-        ignoredScanData = justHandled;
-        ignoreScanUntil = Date.now() + 2500;
         lastFound=null; scanning=true; requestAnimationFrame(tick);
       });
 
       document.getElementById('declineBtn').addEventListener('click', ()=>{ 
-        const justHandled = lastFound;
         if(foundArea) foundArea.style.display='none';
         if(scanBoxOverlay) scanBoxOverlay.style.display='block';
-        // Undgå at samme QR-kode straks fanges igen, mens kameraet stadig peger på den.
-        // En ny/anden QR-kode kan stadig scannes med det samme.
-        ignoredScanData = justHandled;
-        ignoreScanUntil = Date.now() + 2500;
         lastFound=null; scanning=true; requestAnimationFrame(tick);
       });
 
