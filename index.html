@@ -163,7 +163,6 @@
         <div class="video-wrap">
           <video id="video" autoplay muted playsinline></video>
           <div class="scan-box" id="scanBoxOverlay">
-            <div class="scan-line"></div>
           </div>
         </div>
 
@@ -183,13 +182,24 @@
                    <label style="font-size:14px; font-weight:700; display:block; margin-bottom:8px; color:#333;">Antal stk.</label>
                    <input id="qtyInput" class="num-input" type="number" min="0" step="1" value="1" inputmode="numeric">
                </div>
-               
-               <div style="flex:1; padding-top:34px;">
-                  <label style="display:flex; align-items:center; gap:12px; cursor:pointer; background:#fff; border:2px solid #eee; padding:12px; border-radius:12px;">
-                    <input id="monthCheckbox" type="checkbox" style="width:24px; height:24px;" />
-                    <span style="font-size:14px; font-weight:600; line-height:1.2;">Måneds<br>rapport</span>
-                  </label>
+               <div style="flex:1;">
+                   <label style="font-size:14px; font-weight:700; display:block; margin-bottom:8px; color:#333;">Enhed</label>
+                   <select id="unitSelect" class="unit-select">
+                       <option value="STK">STK</option>
+                       <option value="RULL">RULL</option>
+                       <option value="KS">KS</option>
+                       <option value="PL">PL</option>
+                       <option value="Dunke">Dunke</option>
+                       <option value="m2">m2</option>
+                   </select>
                </div>
+            </div>
+
+            <div style="margin-top:16px;">
+               <label style="display:inline-flex; align-items:center; gap:12px; cursor:pointer; background:#fff; border:2px solid #eee; padding:12px 16px; border-radius:12px;">
+                 <input id="monthCheckbox" type="checkbox" style="width:24px; height:24px;" />
+                 <span style="font-size:14px; font-weight:600;">Månedsrapport</span>
+               </label>
             </div>
 
             <div id="monthInputRow" style="display:none; margin-top:24px;">
@@ -362,6 +372,7 @@
       const scanBoxOverlay = document.getElementById('scanBoxOverlay');
       
       const qtyInput = document.getElementById('qtyInput');
+      const unitSelect = document.getElementById('unitSelect');
       const monthCheckbox = document.getElementById('monthCheckbox');
       const monthQtyInput = document.getElementById('monthQtyInput');
       const monthUnitSelect = document.getElementById('monthUnitSelect');
@@ -389,6 +400,21 @@
 
       function formatDateDMY(date){ const d=String(date.getDate()).padStart(2,'0'); const m=String(date.getMonth()+1).padStart(2,'0'); const y=date.getFullYear(); return `${d}/${m}/${y}`; }
       function escapeHtml(text){ if(typeof text!=='string') text=String(text); return text.replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+
+      // Hjælpefunktion der sætter værdien af et <select>. Hvis værdien
+      // ikke findes som option, tilføjes den dynamisk (så en usædvanlig
+      // enhed fra QR-koden bevares som mulighed).
+      function setSelectValue(select, value){
+        if(!select) return;
+        const val = (value || '').trim();
+        if(val && !Array.from(select.options).some(opt => opt.value === val)){
+          const option = document.createElement('option');
+          option.value = val;
+          option.textContent = val;
+          select.appendChild(option);
+        }
+        select.value = val || 'STK';
+      }
       
       function parseQRFields(qrtext){ 
         // Interne felter: de "gamle" felter bruges fortsat til visning i app og PDF.
@@ -605,11 +631,12 @@
         renderItems();
       });
 
-      function addOrAggregateItem(rawData, qtyToAdd, monthQtyToAdd, monthUnit, isMonthChecked){ 
+      function addOrAggregateItem(rawData, qtyToAdd, monthQtyToAdd, monthUnit, isMonthChecked, selectedUnit){ 
         const key=itemKeyFromRaw(rawData); 
         const existing=items.find(i=>i.key===key); 
         if(existing){ 
             existing.qty+=qtyToAdd; 
+            if(selectedUnit) existing.enhed = selectedUnit;
             existing.monthQty+=monthQtyToAdd; 
             if(monthUnit) existing.monthUnit = monthUnit; 
             if(isMonthChecked) existing.inMonthReport = true; 
@@ -617,6 +644,7 @@
         } 
         else { 
             const parsed=parseQRFields(rawData); 
+            if(selectedUnit) parsed.enhed = selectedUnit;
             items.push({ 
                 key, data:rawData, 
                 qty:qtyToAdd, 
@@ -792,9 +820,9 @@
         
         if(foundArea) {
             foundArea.style.display='flex'; 
+            const f = parseQRFields(data);
             
             if(foundText) {
-                const f = parseQRFields(data);
                 let displayStr = "";
                 if(f.område) displayStr += `Område: ${f.område}\n`;
                 if(f.varenummer) displayStr += `Varenummer: ${f.varenummer}\n`;
@@ -808,6 +836,7 @@
             }
 
             if(qtyInput) qtyInput.value=1;
+            if(unitSelect) setSelectValue(unitSelect, f.enhed || 'STK');
             if(monthCheckbox) monthCheckbox.checked = false;
             setMonthVisibility();
         }
@@ -947,8 +976,9 @@
         let m=monthCheckbox.checked ? (parseInt(monthQtyInput.value,10)||0) : 0;
         let u = monthCheckbox.checked ? monthUnitSelect.value : '';
         let isChecked = monthCheckbox.checked;
+        let selectedUnit = unitSelect.value;
 
-        addOrAggregateItem(lastFound, q, m, u, isChecked); 
+        addOrAggregateItem(lastFound, q, m, u, isChecked, selectedUnit); 
         renderItems(); 
         
         if(foundArea) foundArea.style.display='none';
