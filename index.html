@@ -185,6 +185,7 @@
                <div style="flex:1;">
                    <label style="font-size:14px; font-weight:700; display:block; margin-bottom:8px; color:#333;">Enhed</label>
                    <select id="unitSelect" class="unit-select">
+                       <option value="">Vælg enhed</option>
                        <option value="STK">STK</option>
                        <option value="RULL">RULL</option>
                        <option value="KS">KS</option>
@@ -839,7 +840,7 @@
             }
 
             if(qtyInput) qtyInput.value=0;
-            if(unitSelect) setSelectValue(unitSelect, f.enhed || 'STK');
+            if(unitSelect) unitSelect.value='';
             if(monthCheckbox) monthCheckbox.checked = false;
             setMonthVisibility();
         }
@@ -975,11 +976,12 @@
 
       document.getElementById('acceptBtn').addEventListener('click', ()=>{ 
         if(!lastFound) return;
+        let selectedUnit = unitSelect.value;
+        if(!selectedUnit){ alert('Vælg venligst en enhed'); return; }
         let q=parseInt(qtyInput.value,10)||0; 
         let m=monthCheckbox.checked ? (parseInt(monthQtyInput.value,10)||0) : 0;
         let u = monthCheckbox.checked ? monthUnitSelect.value : '';
         let isChecked = monthCheckbox.checked;
-        let selectedUnit = unitSelect.value;
 
         addOrAggregateItem(lastFound, q, m, u, isChecked, selectedUnit); 
         renderItems(); 
