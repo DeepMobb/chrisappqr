@@ -180,7 +180,7 @@
             <div style="display:flex; gap:16px; align-items:flex-start;">
                <div style="flex:1;">
                    <label style="font-size:14px; font-weight:700; display:block; margin-bottom:8px; color:#333;">Antal stk.</label>
-                   <input id="qtyInput" class="num-input" type="number" min="0" step="1" value="0" inputmode="numeric">
+                   <input id="qtyInput" class="num-input" type="number" min="0" step="1" value="0" inputmode="numeric" onfocus="if(this.value==='0')this.value='';this.select();">
                </div>
                <div style="flex:1;">
                    <label style="font-size:14px; font-weight:700; display:block; margin-bottom:8px; color:#333;">Enhed</label>
