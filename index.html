@@ -1028,6 +1028,33 @@
       });
 
       loadReports();
+
+      // Håndter at appen bliver backgroundet / kommer tilbage.
+      // Uden dette dør kamera-streamen når brugeren låser skærmen eller
+      // skifter app, men appen ved det ikke - resultatet er en "frossen"
+      // scanner når brugeren kommer tilbage.
+      document.addEventListener('visibilitychange', () => {
+        if (document.hidden) {
+          // Appen backgroundes - stop kamera rent så OS'et kan frigive det
+          if (window._currentStream) {
+            stopCamera();
+          }
+        } else {
+          // Appen kommer tilbage - hvis scanneren stadig er åben og
+          // kamera-streamen er død, genstart kameraet
+          if (scannerModal && scannerModal.style.display === 'flex' && !window._currentStream) {
+            const wasInFoundArea = foundArea && foundArea.style.display === 'flex';
+            startCameraAndScan().then(() => {
+              if (wasInFoundArea) {
+                // Bevar "Fundet vare"-vinduet hvis brugeren var midt i en gennemgang
+                foundArea.style.display = 'flex';
+                if (scanBoxOverlay) scanBoxOverlay.style.display = 'none';
+                scanning = false;
+              }
+            }).catch(() => {}); // Ignorer fejl - brugeren kan manuelt genåbne scanneren
+          }
+        }
+      });
     }
   </script>
 </body>
