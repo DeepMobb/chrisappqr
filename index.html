@@ -840,7 +840,18 @@
             }
 
             if(qtyInput) qtyInput.value=0;
-            if(unitSelect) unitSelect.value='';
+            if(unitSelect) {
+              const parsedUnit = (f.enhed || '').trim();
+              if (parsedUnit && !Array.from(unitSelect.options).some(opt => opt.value === parsedUnit)) {
+                // Tilføj enhed fra QR som ny option hvis den ikke allerede findes i dropdownen
+                const option = document.createElement('option');
+                option.value = parsedUnit;
+                option.textContent = parsedUnit;
+                unitSelect.appendChild(option);
+              }
+              // Pre-udfyld dropdownen med QR-kodens enhed (eller blank hvis QR ikke indeholdt en)
+              unitSelect.value = parsedUnit;
+            }
             if(monthCheckbox) monthCheckbox.checked = false;
             setMonthVisibility();
         }
