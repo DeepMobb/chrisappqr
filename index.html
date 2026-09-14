@@ -205,8 +205,25 @@
             </div>
 
             <div id="monthInputRow" style="display:none; margin-top:24px;">
-               <label style="font-size:14px; font-weight:700; display:block; margin-bottom:8px; color:#333;">Antal til måned</label>
-               <input id="monthQtyInput" class="num-input-month" type="number" min="0" step="1" value="" placeholder="0" inputmode="numeric" />
+               <div style="display:flex; gap:16px;">
+                   <div style="flex:1;">
+                       <label style="font-size:14px; font-weight:700; display:block; margin-bottom:8px; color:#333;">Antal til måned</label>
+                       <input id="monthQtyInput" class="num-input-month" type="number" min="0" step="1" value="" placeholder="0" inputmode="numeric" />
+                   </div>
+                   <div style="flex:1;">
+                       <label style="font-size:14px; font-weight:700; display:block; margin-bottom:8px; color:#333;">Enhed</label>
+                       <select id="monthUnitSelect" class="unit-select">
+                           <option value="">Vælg enhed</option>
+                           <option value="STK">STK</option>
+                           <option value="RULL">RULL</option>
+                           <option value="KS">KS</option>
+                           <option value="PL">PL</option>
+                           <option value="Dunke">Dunke</option>
+                           <option value="m2">m2</option>
+                           <option value="kg">kg</option>
+                       </select>
+                   </div>
+               </div>
             </div>
 
             <div class="controls">
@@ -287,6 +304,7 @@
                   <th>Varenummer</th>
                   <th>Materiale</th>
                   <th>Månedsantal</th>
+                  <th>Enhed</th>
                 </tr>
               </thead>
               <tbody id="monthTbody"></tbody>
@@ -361,6 +379,7 @@
       const unitSelect = document.getElementById('unitSelect');
       const monthCheckbox = document.getElementById('monthCheckbox');
       const monthQtyInput = document.getElementById('monthQtyInput');
+      const monthUnitSelect = document.getElementById('monthUnitSelect');
       const monthInputRow = document.getElementById('monthInputRow');
 
       const reportModalWrap = document.getElementById('reportModalWrap');
@@ -618,13 +637,14 @@
         renderItems();
       });
 
-      function addOrAggregateItem(rawData, qtyToAdd, monthQtyToAdd, isMonthChecked, selectedUnit){ 
+      function addOrAggregateItem(rawData, qtyToAdd, monthQtyToAdd, monthUnit, isMonthChecked, selectedUnit){ 
         const key=itemKeyFromRaw(rawData); 
         const existing=items.find(i=>i.key===key); 
         if(existing){ 
             existing.qty+=qtyToAdd; 
             if(selectedUnit) existing.enhed = selectedUnit;
             existing.monthQty+=monthQtyToAdd; 
+            if(monthUnit) existing.monthUnit = monthUnit;
             if(isMonthChecked) existing.inMonthReport = true; 
             existing._when=Date.now(); 
         } 
@@ -635,6 +655,7 @@
                 key, data:rawData, 
                 qty:qtyToAdd, 
                 monthQty:monthQtyToAdd, 
+                monthUnit: monthUnit || '',
                 inMonthReport: isMonthChecked, 
                 _when:Date.now(), ...parsed 
             }); 
@@ -665,7 +686,8 @@
            
            // Tabel 2: Månedsoptælling
            if(it.inMonthReport){
-              const row2=`<tr><td>${idx+1}</td><td>${it.område||''}</td><td>${it.varenummer||''}</td><td>${it.materiale||''}</td><td>${it.monthQty}</td></tr>`;
+              const u = it.monthUnit || it.enhed || '';
+              const row2=`<tr><td>${idx+1}</td><td>${it.område||''}</td><td>${it.varenummer||''}</td><td>${it.materiale||''}</td><td>${it.monthQty}</td><td>${u}</td></tr>`;
               t2.insertAdjacentHTML('beforeend',row2);
            }
 
@@ -772,8 +794,8 @@
                 doc2.setFontSize(10); doc2.text('Oprettet: ' + new Date(report.created).toLocaleString(), 14, 22);
 
                 doc2.setFontSize(14); doc2.text("Månedsoptælling", 14, 32);
-                const cols2 = ['#', 'Område', 'Varenummer', 'Materiale', 'Månedsantal'];
-                const rows2 = monthItems.map((it, idx) => [ idx+1, it.område||'', it.varenummer||'', it.materiale||'', it.monthQty ]);
+                const cols2 = ['#', 'Område', 'Varenummer', 'Materiale', 'Månedsantal', 'Enhed'];
+                const rows2 = monthItems.map((it, idx) => [ idx+1, it.område||'', it.varenummer||'', it.materiale||'', it.monthQty, it.monthUnit||it.enhed||'' ]);
                 doc2.autoTable({ head: [cols2], body: rows2, startY: 35, theme: 'grid' });
                 
                 blob2 = doc2.output('blob');
@@ -974,17 +996,24 @@
         qtyInput.value=0; monthCheckbox.checked=false; setMonthVisibility(); 
         startCameraAndScan(); 
       });
-      document.getElementById('closeScanner').addEventListener('click', ()=>{ stopCamera(); scannerModal.style.display='none'; });
+      document.getElementById('closeScanner').addEventListener('click', ()=>{ 
+        stopCamera(); 
+        scannerModal.style.display='none';
+        // Scroll tilbage til toppen af siden så brugeren ser kamera/gem-knapperne
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      });
 
       document.getElementById('acceptBtn').addEventListener('click', ()=>{ 
         if(!lastFound) return;
         let selectedUnit = unitSelect.value;
-        if(!selectedUnit){ alert('Vælg venligst en enhed'); return; }
+        // Enhed er kun påkrævet når månedsrapport ikke er markeret
+        if(!selectedUnit && !monthCheckbox.checked){ alert('Vælg venligst en enhed'); return; }
         let q=parseInt(qtyInput.value,10)||0; 
         let m=monthCheckbox.checked ? (parseInt(monthQtyInput.value,10)||0) : 0;
+        let u = monthCheckbox.checked ? monthUnitSelect.value : '';
         let isChecked = monthCheckbox.checked;
 
-        addOrAggregateItem(lastFound, q, m, isChecked, selectedUnit); 
+        addOrAggregateItem(lastFound, q, m, u, isChecked, selectedUnit); 
         renderItems(); 
         
         if(foundArea) foundArea.style.display='none';
