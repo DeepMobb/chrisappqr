@@ -855,15 +855,13 @@
             if(qtyInput) qtyInput.value=0;
             if(unitSelect) {
               const parsedUnit = (f.enhed || '').trim();
-              if (parsedUnit && !Array.from(unitSelect.options).some(opt => opt.value === parsedUnit)) {
-                // Tilføj enhed fra QR som ny option hvis den ikke allerede findes i dropdownen
-                const option = document.createElement('option');
-                option.value = parsedUnit;
-                option.textContent = parsedUnit;
-                unitSelect.appendChild(option);
+              // Pre-udfyld kun hvis den parsede enhed matcher en af de forudsatte enheder.
+              // Ellers står dropdownen på "Vælg enhed".
+              if (parsedUnit && Array.from(unitSelect.options).some(opt => opt.value === parsedUnit)) {
+                unitSelect.value = parsedUnit;
+              } else {
+                unitSelect.value = '';
               }
-              // Pre-udfyld dropdownen med QR-kodens enhed (eller blank hvis QR ikke indeholdt en)
-              unitSelect.value = parsedUnit;
             }
             if(monthCheckbox) monthCheckbox.checked = false;
             if(monthUnitSelect) monthUnitSelect.value = '';
@@ -1008,8 +1006,6 @@
       document.getElementById('acceptBtn').addEventListener('click', ()=>{ 
         if(!lastFound) return;
         let selectedUnit = unitSelect.value;
-        // Enhed er kun påkrævet når månedsrapport ikke er markeret
-        if(!selectedUnit && !monthCheckbox.checked){ alert('Vælg venligst en enhed'); return; }
         let q=parseInt(qtyInput.value,10)||0; 
         let m=monthCheckbox.checked ? (parseInt(monthQtyInput.value,10)||0) : 0;
         let u = monthCheckbox.checked ? monthUnitSelect.value : '';
