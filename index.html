@@ -318,18 +318,50 @@
     <div id="editQtyModal" class="modal" style="display:none; background:rgba(0,0,0,0.5);">
       <div class="report-modal" style="max-width:500px; padding:24px;">
         <div style="margin-bottom: 20px; border-bottom: 1px solid #eee; padding-bottom:10px;">
-            <div style="font-weight:800; font-size:22px; color:var(--dark);">Ret antal</div>
+            <div style="font-weight:800; font-size:22px; color:var(--dark);">Ret antal og enhed</div>
             <div id="editQtyVareInfo" style="color:#777; font-size:14px; margin-top:4px;"></div>
         </div>
 
-        <div style="margin-bottom:20px;">
-            <label style="font-size:14px; font-weight:700; display:block; margin-bottom:8px; color:#333;">Antal stk.</label>
-            <input id="editQtyInput" class="num-input" type="number" min="0" step="1" inputmode="numeric">
+        <div style="display:flex; gap:16px; margin-bottom:20px;">
+            <div style="flex:1;">
+                <label style="font-size:14px; font-weight:700; display:block; margin-bottom:8px; color:#333;">Antal stk.</label>
+                <input id="editQtyInput" class="num-input" type="number" min="0" step="1" inputmode="numeric">
+            </div>
+            <div style="flex:1;">
+                <label style="font-size:14px; font-weight:700; display:block; margin-bottom:8px; color:#333;">Enhed</label>
+                <select id="editUnitSelect" class="unit-select">
+                    <option value="">Vælg enhed</option>
+                    <option value="STK">STK</option>
+                    <option value="RULL">RULL</option>
+                    <option value="KS">KS</option>
+                    <option value="PL">PL</option>
+                    <option value="Dunke">Dunke</option>
+                    <option value="m2">m2</option>
+                    <option value="kg">kg</option>
+                </select>
+            </div>
         </div>
 
         <div id="editMonthQtyRow" style="display:none; margin-bottom:20px;">
-            <label style="font-size:14px; font-weight:700; display:block; margin-bottom:8px; color:#333;">Månedsantal</label>
-            <input id="editMonthQtyInput" class="num-input" type="number" min="0" step="1" inputmode="numeric">
+            <div style="display:flex; gap:16px;">
+                <div style="flex:1;">
+                    <label style="font-size:14px; font-weight:700; display:block; margin-bottom:8px; color:#333;">Månedsantal</label>
+                    <input id="editMonthQtyInput" class="num-input" type="number" min="0" step="1" inputmode="numeric">
+                </div>
+                <div style="flex:1;">
+                    <label style="font-size:14px; font-weight:700; display:block; margin-bottom:8px; color:#333;">Månedsenhed</label>
+                    <select id="editMonthUnitSelect" class="unit-select">
+                        <option value="">Vælg enhed</option>
+                        <option value="STK">STK</option>
+                        <option value="RULL">RULL</option>
+                        <option value="KS">KS</option>
+                        <option value="PL">PL</option>
+                        <option value="Dunke">Dunke</option>
+                        <option value="m2">m2</option>
+                        <option value="kg">kg</option>
+                    </select>
+                </div>
+            </div>
         </div>
 
         <div class="controls" style="margin-top:10px; padding-top:20px;">
@@ -594,20 +626,39 @@
       const editQtyModal = document.getElementById('editQtyModal');
       const editQtyVareInfo = document.getElementById('editQtyVareInfo');
       const editQtyInput = document.getElementById('editQtyInput');
+      const editUnitSelect = document.getElementById('editUnitSelect');
       const editMonthQtyRow = document.getElementById('editMonthQtyRow');
       const editMonthQtyInput = document.getElementById('editMonthQtyInput');
+      const editMonthUnitSelect = document.getElementById('editMonthUnitSelect');
       const editQtySaveBtn = document.getElementById('editQtySaveBtn');
       const editQtyCancelBtn = document.getElementById('editQtyCancelBtn');
       let editingItemIdx = null;
+
+      // Hjælpefunktion: sæt et select til varens enhed. Hvis varen har en
+      // enhed der ikke findes som fast option i dropdownen, tilføjes den
+      // dynamisk så den bevares. Ellers står dropdownen på "Vælg enhed".
+      function setEditSelectValue(select, value){
+        if(!select) return;
+        const val = (value || '').trim();
+        if(val && !Array.from(select.options).some(opt => opt.value === val)){
+          const option = document.createElement('option');
+          option.value = val;
+          option.textContent = val;
+          select.appendChild(option);
+        }
+        select.value = val;
+      }
 
       window.editItemQty=function(idx){
         const it = items[idx]; if(!it) return;
         editingItemIdx = idx;
         editQtyVareInfo.textContent = (it.varenummer || 'Vare') + (it.materiale ? ' — ' + it.materiale : '');
         editQtyInput.value = it.qty;
+        setEditSelectValue(editUnitSelect, it.enhed || '');
         if(it.inMonthReport){
           editMonthQtyRow.style.display = 'block';
           editMonthQtyInput.value = it.monthQty;
+          setEditSelectValue(editMonthUnitSelect, it.monthUnit || '');
         } else {
           editMonthQtyRow.style.display = 'none';
         }
@@ -627,10 +678,12 @@
         const newQty = parseInt(editQtyInput.value, 10);
         if(isNaN(newQty) || newQty < 0){ alert('Ugyldigt antal'); return; }
         it.qty = newQty;
+        it.enhed = editUnitSelect.value;
         if(it.inMonthReport){
           const newMonth = parseInt(editMonthQtyInput.value, 10);
           if(isNaN(newMonth) || newMonth < 0){ alert('Ugyldigt månedsantal'); return; }
           it.monthQty = newMonth;
+          it.monthUnit = editMonthUnitSelect.value;
         }
         editQtyModal.style.display = 'none';
         editingItemIdx = null;
