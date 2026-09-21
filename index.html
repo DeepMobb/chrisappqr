@@ -371,6 +371,14 @@
       </div>
     </div>
 
+    <div id="qtyWarningModal" class="modal" style="display:none; background:rgba(0,0,0,0.5); z-index:3000;">
+      <div class="report-modal" style="max-width:400px; padding:24px; text-align:center;">
+        <div style="font-weight:800; font-size:20px; margin-bottom:12px; color:var(--dark);">⚠️ Antal mangler</div>
+        <div style="color:#555; margin-bottom:24px; line-height:1.4;">Du skal angive et antal større end 0 for at tilføje varen til opfyldningslisten.<br><br>(Hvis varen kun er til månedsrapporten, marker "Månedsrapport"-checkboxen først.)</div>
+        <button id="qtyWarningOkBtn" class="primary" style="width:100%; height:56px;">OK, ret antal</button>
+      </div>
+    </div>
+
     <div class="error-banner" id="errorBanner"></div>
     <canvas id="hiddenCanvas" style="display:none;"></canvas>
   </div>
@@ -1056,6 +1064,16 @@
         window.scrollTo({ top: 0, behavior: 'smooth' });
       });
 
+      // Handler for in-window antal-advarsel: luk modal og sæt fokus tilbage
+      // på antal-inputtet så brugeren kan rette med det samme.
+      const qtyWarningModal = document.getElementById('qtyWarningModal');
+      document.getElementById('qtyWarningOkBtn').addEventListener('click', () => {
+        qtyWarningModal.style.display = 'none';
+        setTimeout(() => {
+          if(qtyInput){ qtyInput.focus(); qtyInput.select(); }
+        }, 50);
+      });
+
       document.getElementById('acceptBtn').addEventListener('click', ()=>{ 
         if(!lastFound) return;
         let selectedUnit = unitSelect.value;
@@ -1063,6 +1081,14 @@
         let m=monthCheckbox.checked ? (parseInt(monthQtyInput.value,10)||0) : 0;
         let u = monthCheckbox.checked ? monthUnitSelect.value : '';
         let isChecked = monthCheckbox.checked;
+
+        // Antal skal være > 0 for at tilføje til opfyldningsliste.
+        // Undtagelse: hvis månedsrapport er markeret, må antal godt være 0
+        // (så varen kun kommer på månedsrapporten, ikke opfyldningslisten).
+        if(!isChecked && q === 0){
+          qtyWarningModal.style.display = 'flex';
+          return;
+        }
 
         addOrAggregateItem(lastFound, q, m, u, isChecked, selectedUnit); 
         renderItems(); 
