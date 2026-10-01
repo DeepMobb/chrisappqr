@@ -193,6 +193,8 @@
                        <option value="Dunke">Dunke</option>
                        <option value="m2">m2</option>
                        <option value="kg">kg</option>
+                       <option value="Liter">Liter</option>
+                       <option value="Meter">Meter</option>
                    </select>
                </div>
             </div>
@@ -221,6 +223,8 @@
                            <option value="Dunke">Dunke</option>
                            <option value="m2">m2</option>
                            <option value="kg">kg</option>
+                           <option value="Liter">Liter</option>
+                           <option value="Meter">Meter</option>
                        </select>
                    </div>
                </div>
@@ -376,6 +380,14 @@
         <div style="font-weight:800; font-size:20px; margin-bottom:12px; color:var(--dark);">⚠️ Antal mangler</div>
         <div style="color:#555; margin-bottom:24px; line-height:1.4;">Du skal angive et antal større end 0 for at tilføje varen til opfyldningslisten.<br><br>(Hvis varen kun er til månedsrapporten, marker "Månedsrapport"-checkboxen først.)</div>
         <button id="qtyWarningOkBtn" class="primary" style="width:100%; height:56px;">OK, ret antal</button>
+      </div>
+    </div>
+
+    <div id="qtyWarningModal" class="modal" style="display:none; background:rgba(0,0,0,0.5); z-index:3000;">
+      <div class="report-modal" style="max-width:400px; padding:24px; text-align:center;">
+        <div style="font-weight:800; font-size:20px; margin-bottom:12px; color:var(--dark);">⚠️ <span id="qtyWarningTitle">Mangler oplysninger</span></div>
+        <div id="qtyWarningMessage" style="color:#555; margin-bottom:24px; line-height:1.4;"></div>
+        <button id="qtyWarningOkBtn" class="primary" style="width:100%; height:56px;">OK, ret indtastning</button>
       </div>
     </div>
 
@@ -916,9 +928,14 @@
             if(qtyInput) qtyInput.value=0;
             if(unitSelect) {
               const parsedUnit = (f.enhed || '').trim();
-              // Pre-udfyld kun hvis den parsede enhed matcher en af de forudsatte enheder.
-              // Ellers står dropdownen på "Vælg enhed".
-              if (parsedUnit && Array.from(unitSelect.options).some(opt => opt.value === parsedUnit)) {
+              if (parsedUnit) {
+                // Tilføj enhed fra QR som ny option hvis den ikke allerede findes i dropdownen
+                if (!Array.from(unitSelect.options).some(opt => opt.value === parsedUnit)) {
+                  const option = document.createElement('option');
+                  option.value = parsedUnit;
+                  option.textContent = parsedUnit;
+                  unitSelect.appendChild(option);
+                }
                 unitSelect.value = parsedUnit;
               } else {
                 unitSelect.value = '';
@@ -1064,33 +1081,59 @@
         window.scrollTo({ top: 0, behavior: 'smooth' });
       });
 
-      // Handler for in-window antal-advarsel: luk modal og sæt fokus tilbage
-      // på antal-inputtet så brugeren kan rette med det samme.
+      // Handler for in-window advarsel: luk modal og sæt fokus tilbage på
+      // det relevante felt så brugeren kan rette med det samme. Bruger ikke
+      // alert() da det kan fryse kamera-streamen på iOS Safari.
       const qtyWarningModal = document.getElementById('qtyWarningModal');
+      const qtyWarningTitle = document.getElementById('qtyWarningTitle');
+      const qtyWarningMessage = document.getElementById('qtyWarningMessage');
+      let qtyWarningFocusTarget = null;
       document.getElementById('qtyWarningOkBtn').addEventListener('click', () => {
         qtyWarningModal.style.display = 'none';
         setTimeout(() => {
-          if(qtyInput){ qtyInput.focus(); qtyInput.select(); }
+          if(qtyWarningFocusTarget){ qtyWarningFocusTarget.focus(); }
         }, 50);
       });
 
-      document.getElementById('acceptBtn').addEventListener('click', ()=>{ 
+      document.getElementById('acceptBtn').addEventListener('click', ()=>{
         if(!lastFound) return;
         let selectedUnit = unitSelect.value;
-        let q=parseInt(qtyInput.value,10)||0; 
+        let q=parseInt(qtyInput.value,10)||0;
         let m=monthCheckbox.checked ? (parseInt(monthQtyInput.value,10)||0) : 0;
         let u = monthCheckbox.checked ? monthUnitSelect.value : '';
         let isChecked = monthCheckbox.checked;
 
-        // Antal skal være > 0 for at tilføje til opfyldningsliste.
+        // Validering 1: Antal skal være > 0 for at tilføje til opfyldningsliste.
         // Undtagelse: hvis månedsrapport er markeret, må antal godt være 0
         // (så varen kun kommer på månedsrapporten, ikke opfyldningslisten).
         if(!isChecked && q === 0){
+          qtyWarningTitle.textContent = 'Antal mangler';
+          qtyWarningMessage.innerHTML = 'Du skal angive et antal større end 0 for at tilføje varen til opfyldningslisten.<br><br>(Hvis varen kun er til månedsrapporten, marker "Månedsrapport"-checkboxen først.)';
+          qtyWarningFocusTarget = qtyInput;
           qtyWarningModal.style.display = 'flex';
           return;
         }
 
-        addOrAggregateItem(lastFound, q, m, u, isChecked, selectedUnit); 
+        // Validering 2: Hvis antal > 0, skal enhed vælges til opfyldningslisten.
+        // (Hvis antal = 0 bruges enhed ikke på opfyldningslisten.)
+        if(q > 0 && !selectedUnit){
+          qtyWarningTitle.textContent = 'Enhed mangler';
+          qtyWarningMessage.innerHTML = 'Du skal vælge en enhed for opfyldningslisten.';
+          qtyWarningFocusTarget = unitSelect;
+          qtyWarningModal.style.display = 'flex';
+          return;
+        }
+
+        // Validering 3: Hvis månedsrapport er markeret, skal månedsenhed vælges.
+        if(isChecked && !u){
+          qtyWarningTitle.textContent = 'Månedsenhed mangler';
+          qtyWarningMessage.innerHTML = 'Du skal vælge en enhed for månedsrapporten.';
+          qtyWarningFocusTarget = monthUnitSelect;
+          qtyWarningModal.style.display = 'flex';
+          return;
+        }
+
+        addOrAggregateItem(lastFound, q, m, u, isChecked, selectedUnit);
         renderItems(); 
         
         if(foundArea) foundArea.style.display='none';
